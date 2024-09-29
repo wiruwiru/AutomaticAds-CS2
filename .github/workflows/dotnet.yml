@@ -48,7 +48,6 @@ jobs:
         cd ${{ env.OUTPUT_PATH }}
         # Crear el zip con los archivos de la compilación
         zip -r ../${{ env.PROJECT_NAME }}.zip .
-        fi
     - name: AutomaticAds
       uses: ncipollo/release-action@v1.12.0
       with:
