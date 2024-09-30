@@ -38,6 +38,10 @@ Allows players to report another user who is breaking the community rules, this 
   "ConfigVersion": 1
 }
 ```
+List of available colors:
+`GREEN` `RED` `YELLOW` `BLUE` `ORANGE` `WHITE` `PURPLE` `GREY` `LIGHT_RED` `LIGHT_BLUE` `LIGHT_YELLOW` `LIGHT_PURPLE` `DARK_RED` 
+`BLUE_GREY` `DARK_BLUE` `LIME` `OLIVE` `GOLD` `SILVER` `MAGENTA`
+
 # Commands
 `!announce` `css_announce`  - You can use it to force the ad to be sent (Recommended for administrators).
 
