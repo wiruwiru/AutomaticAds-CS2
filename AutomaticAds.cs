@@ -5,6 +5,8 @@ using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Utils;
 using System.Text.Json.Serialization;
+using CounterStrikeSharp.API.Modules.Timers;
+using static CounterStrikeSharp.API.Core.Listeners;
 
 namespace AutomaticAds;
 
@@ -39,11 +41,12 @@ public class BaseConfigs : BasePluginConfig
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.0";
-    public override string ModuleAuthor => "luca.uy";
+    public override string ModuleVersion => "1.0.1";
+    public override string ModuleAuthor => "luca.uy and iancg";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
     private bool _isDebugEnabled = false; // ACTIVAR O DESACTIVAR LOS MENSAJES DE DEBUG/LOGS
+    public CounterStrikeSharp.API.Modules.Timers.Timer? intervalMessages;
     public override void Load(bool hotReload)
     {
         AddCommand(Config.ForceCommand, "Send the advertisement in a forced way", (player, commandInfo) =>
@@ -70,7 +73,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             string formattedSendForceCommand = FormatMessage(Config.SendForceCommand);
             commandInfo.ReplyToCommand($"{FormatMessage(Config.ChatPrefix)} {formattedSendForceCommand}");
         });
-
+        
+        RegisterListener<Listeners.OnMapEnd>(() => Unload(true));
+        RegisterListener<Listeners.OnMapStart>(OnMapStart);
     }
 
     public required BaseConfigs Config { get; set; }
@@ -120,22 +125,21 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         }
     }
 
-    [GameEventHandler]
-    public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
+    public void SendMessages()
     {
-        Log("Inicio de ronda detectado.");
-        if (CanSendMessage())
-        {
-            SendMessageToAllPlayers($"{Config.ChatPrefix} {Config.ChatMessage}");
-            _lastMessageTime = DateTime.Now;
-            Log("Mensaje enviado a todos los jugadores.");
-        }
-        else
-        {
-            Log("No se puede enviar el mensaje en este momento.");
-        }
-
-        return HookResult.Continue;
+        intervalMessages = AddTimer(1.00f, () => {
+            Log("Inicio de ronda detectado.");
+            if (CanSendMessage())
+            {
+                SendMessageToAllPlayers($"{Config.ChatPrefix} {Config.ChatMessage}");
+                _lastMessageTime = DateTime.Now;
+                Log("Mensaje enviado a todos los jugadores.");
+            }
+            else
+            {
+                Log("No se puede enviar el mensaje en este momento.");
+            }
+        }, TimerFlags.REPEAT);
     }
 
     private bool CanSendMessage()
@@ -182,7 +186,6 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     private string FormatMessage(string message)
     {
-        // Usar el formateador existente
         MessageColorFormatter formatter = new MessageColorFormatter();
         return formatter.FormatMessage(message);
     }
@@ -198,5 +201,13 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     public void SetDebugEnabled(bool isEnabled)
     {
         _isDebugEnabled = isEnabled;
+    }
+    private void OnMapStart(string mapName)
+    {
+        SendMessages();
+    }
+    public override void Unload(bool hotReload)
+    {
+        intervalMessages?.Kill();
     }
 }
