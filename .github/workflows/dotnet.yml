@@ -9,7 +9,7 @@ on:
 env:
   BUILD_NUMBER: ${{ github.run_number }}
   PROJECT_PATH: "AutomaticAds.csproj"
-  PROJECT_NAME: "AutomaticAds-CS2"
+  PROJECT_NAME: "AutomaticAds"
   OUTPUT_PATH: "./AutomaticAds"
 
 jobs:
