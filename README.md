@@ -1,5 +1,8 @@
 # CallAdminSystem CS2
 Allows players to report another user who is breaking the community rules, this report is sent as an embed message to Discord so that administrators can respond.
+
+https://github.com/user-attachments/assets/aae16cc4-7c67-477a-8c89-437d5c035211
+
 ## Installation
 1. Install [CounterStrike Sharp](https://github.com/roflmuffin/CounterStrikeSharp) and [Metamod:Source](https://www.sourcemm.net/downloads.php/?branch=master)
 
