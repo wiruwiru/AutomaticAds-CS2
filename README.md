@@ -48,6 +48,7 @@ List of available colors:
 # Commands
 `!announce` `css_announce`  - You can use it to force the ad to be sent (Recommended for administrators).
 
+## TODO
 | Task                          | Status     | Description                                                                                              |
 |-------------------------------|------------|----------------------------------------------------------------------------------------------------------|
 | Multiple ads with different intervals | Pending    | Add functionality to configure multiple advertisements with varying time intervals.                      |
