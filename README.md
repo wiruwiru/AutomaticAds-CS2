@@ -1,5 +1,5 @@
-# CallAdminSystem CS2
-Allows players to report another user who is breaking the community rules, this report is sent as an embed message to Discord so that administrators can respond.
+# AutomaticAds CS2
+This plugin allows you to schedule and display announcements in the chat at customizable intervals. Each announcement is accompanied by a brief sound effect to capture players' attention seamlessly."
 
 https://github.com/user-attachments/assets/aae16cc4-7c67-477a-8c89-437d5c035211
 
@@ -48,5 +48,7 @@ List of available colors:
 # Commands
 `!announce` `css_announce`  - You can use it to force the ad to be sent (Recommended for administrators).
 
-## TO-DO
-- Ability to configure multiple ads
+| Task                          | Status     | Description                                                                                              |
+|-------------------------------|------------|----------------------------------------------------------------------------------------------------------|
+| Multiple ads with different intervals | Pending    | Add functionality to configure multiple advertisements with varying time intervals.                      |
+| Option to send message only to users with VIP | Pending    | Implement an option to target messages specifically to users with VIP status.                            |
