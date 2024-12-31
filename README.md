@@ -14,6 +14,12 @@ https://github.com/user-attachments/assets/aae16cc4-7c67-477a-8c89-437d5c035211
 
 5. Complete the configuration file with the parameters of your choice.
 
+---
+
+# Commands
+`!announce` `css_announce`  - You can use it to force the ad to be sent (Recommended for administrators).
+
+---
 
 # Config
 | Parameter | Description | Required     |
@@ -26,6 +32,8 @@ https://github.com/user-attachments/assets/aae16cc4-7c67-477a-8c89-437d5c035211
 | `NoPermissions` | Message that will appear when someone without permissions tries to use the force command. |**YES** |
 | `ChatInterval` | Interval for the announcement to be sent (in seconds). |**YES** |
 | `PlaySoundName` | Sound that is played when sending the ad (if you don't know what you are doing leave it default), you can deactivate this function leaving the configuration empty ( example: “PlaySoundName”: “” ) |**YES** |
+
+---
 
 ## Configuration example
 ```
@@ -45,11 +53,10 @@ List of available colors:
 `GREEN` `RED` `YELLOW` `BLUE` `ORANGE` `WHITE` `PURPLE` `GREY` `LIGHT_RED` `LIGHT_BLUE` `LIGHT_YELLOW` `LIGHT_PURPLE` `DARK_RED` 
 `BLUE_GREY` `DARK_BLUE` `LIME` `OLIVE` `GOLD` `SILVER` `MAGENTA`
 
-# Commands
-`!announce` `css_announce`  - You can use it to force the ad to be sent (Recommended for administrators).
+---
 
-## TODO
+## TO-DO
 | Task                          | Status     | Description                                                                                              |
 |-------------------------------|------------|----------------------------------------------------------------------------------------------------------|
 | Multiple ads with different intervals | Pending    | Add functionality to configure multiple advertisements with varying time intervals.                      |
-| Option to send message only to users with VIP | Pending    | Implement an option to target messages specifically to users with VIP status.                            |
+| Option to send a message only to users with a certain flag | Pending    | Implement an option to specifically target messages to users with specific flags.                            |
