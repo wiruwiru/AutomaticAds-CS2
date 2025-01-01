@@ -6,16 +6,19 @@ using CounterStrikeSharp.API.Modules.Admin;
 
 namespace AutomaticAds;
 
-[MinimumApiVersion(296)]
+[MinimumApiVersion(290)]
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.2";
+    public override string ModuleVersion => "1.0.3";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
     private readonly Dictionary<BaseConfigs.AdConfig, DateTime> lastAdTimes = new();
     private readonly List<CounterStrikeSharp.API.Modules.Timers.Timer> timers = new();
+    private CounterStrikeSharp.API.Modules.Timers.Timer? adTimer = null;
+
+    private int currentAdIndex = 0;
     private string _currentMap = "";
 
     public override void Load(bool hotReload)
@@ -58,7 +61,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             {
                 ad.Interval = 3600;
             }
-            
+
             if (ad.Interval < 10)
             {
                 ad.Interval = 10;
@@ -83,24 +86,51 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     public void SendMessages()
     {
-        foreach (var ad in Config.Ads)
+        if (Config.SendAdsInOrder)
         {
-            var timer = AddTimer(1.00f, () =>
-            {
-                if (CanSendAd(ad))
-                {
-                    SendAdToPlayers(ad);
-                    lastAdTimes[ad] = DateTime.Now;
-                }
-            }, TimerFlags.REPEAT);
-
-            timers.Add(timer);
+            ScheduleNextAd();
         }
+        else
+        {
+            foreach (var ad in Config.Ads)
+            {
+                var timer = AddTimer(1.00f, () =>
+                {
+                    if (CanSendAd(ad))
+                    {
+                        SendAdToPlayers(ad);
+                        lastAdTimes[ad] = DateTime.Now;
+                    }
+                }, TimerFlags.REPEAT);
+
+                timers.Add(timer);
+            }
+        }
+    }
+
+    private void ScheduleNextAd()
+    {
+        if (Config.Ads.Count == 0) return;
+
+        var currentAd = Config.Ads[currentAdIndex];
+        float interval = currentAd.Interval;
+
+        adTimer?.Kill();
+        adTimer = AddTimer(interval, () =>
+        {
+            if (CanSendAd(currentAd))
+            {
+                SendAdToPlayers(currentAd);
+                lastAdTimes[currentAd] = DateTime.Now;
+            }
+
+            currentAdIndex = (currentAdIndex + 1) % Config.Ads.Count;
+            ScheduleNextAd();
+        });
     }
 
     private bool CanSendAd(BaseConfigs.AdConfig ad)
     {
-
         if (!lastAdTimes.ContainsKey(ad))
         {
             lastAdTimes[ad] = DateTime.MinValue;
@@ -158,6 +188,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     public override void Unload(bool hotReload)
     {
+        adTimer?.Kill();
         foreach (var timer in timers)
         {
             timer.Kill();

@@ -11,6 +11,9 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("PlaySoundName")]
     public string? PlaySoundName { get; set; } = "ui/panorama/popup_reveal_01";
 
+    [JsonPropertyName("sendAdsInOrder")]
+    public bool SendAdsInOrder { get; set; } = false;
+
     [JsonPropertyName("Ads")]
     public List<AdConfig> Ads { get; set; } = new()
     {
@@ -54,7 +57,7 @@ public class BaseConfigs : BasePluginConfig
         public string Message { get; set; } = string.Empty;
 
         [JsonPropertyName("flag")]
-        public string? Flag { get; set; } = null;
+        public string? Flag { get; set; } = "all";
 
         [JsonPropertyName("map")]
         public string Map { get; set; } = "all";

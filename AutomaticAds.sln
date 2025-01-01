@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomaticAds", "AutomaticAds.csproj", "{C0E4CF6F-DB1A-4253-8C56-8194E8ABB79B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomaticAds", "AutomaticAds.csproj", "{684636DA-6CA9-402C-97F3-4876B6B0B6FE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C0E4CF6F-DB1A-4253-8C56-8194E8ABB79B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C0E4CF6F-DB1A-4253-8C56-8194E8ABB79B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C0E4CF6F-DB1A-4253-8C56-8194E8ABB79B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C0E4CF6F-DB1A-4253-8C56-8194E8ABB79B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{684636DA-6CA9-402C-97F3-4876B6B0B6FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{684636DA-6CA9-402C-97F3-4876B6B0B6FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{684636DA-6CA9-402C-97F3-4876B6B0B6FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{684636DA-6CA9-402C-97F3-4876B6B0B6FE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {467689E6-29D1-4B96-A85C-092BFA190AAC}
+		SolutionGuid = {7D5EE44D-6B04-47BA-9379-3C125C85B889}
 	EndGlobalSection
 EndGlobal

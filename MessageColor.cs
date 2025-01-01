@@ -36,6 +36,7 @@ public class MessageColorFormatter
             message = message.Replace(color.Key, color.Value);
         }
 
+        message = message.Replace("\n", "\u2029");
         message = System.Text.RegularExpressions.Regex.Replace(message, @"\{(.*?)\}", string.Empty);
 
         return message;
