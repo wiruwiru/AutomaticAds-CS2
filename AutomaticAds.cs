@@ -2,6 +2,7 @@
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Modules.Timers;
+using CounterStrikeSharp.API.Modules.Admin;
 
 namespace AutomaticAds;
 
@@ -42,7 +43,10 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         foreach (var ad in Config.Ads)
         {
-            lastAdTimes[ad] = DateTime.MinValue;
+            if (!lastAdTimes.ContainsKey(ad))
+            {
+                lastAdTimes[ad] = DateTime.MinValue;
+            }
         }
     }
 
@@ -51,16 +55,25 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         foreach (var ad in config.Ads)
         {
             if (ad.Interval > 3600)
+            {
                 ad.Interval = 3600;
+            }
+            
             if (ad.Interval < 10)
+            {
                 ad.Interval = 10;
+            }
         }
 
         if (config.ChatPrefix.Length > 80)
+        {
             config.ChatPrefix = "[AutomaticAds]";
+        }
 
         if (string.IsNullOrWhiteSpace(config.PlaySoundName))
+        {
             config.PlaySoundName = "";
+        }
     }
 
     private void OnMapStart(string mapName)
@@ -87,6 +100,17 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     private bool CanSendAd(BaseConfigs.AdConfig ad)
     {
+
+        if (!lastAdTimes.ContainsKey(ad))
+        {
+            lastAdTimes[ad] = DateTime.MinValue;
+        }
+
+        if (lastAdTimes[ad] == DateTime.MinValue)
+        {
+            return true;
+        }
+
         string currentMap = _currentMap;
         if (ad.Map != "all" && ad.Map != currentMap)
         {
@@ -94,7 +118,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         }
 
         var secondsSinceLastMessage = (int)(DateTime.Now - lastAdTimes[ad]).TotalSeconds;
-        return secondsSinceLastMessage >= ad.Interval;
+
+        bool canSend = secondsSinceLastMessage >= ad.Interval;
+        return canSend;
     }
 
     private void SendAdToPlayers(BaseConfigs.AdConfig ad)
@@ -102,18 +128,30 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         var players = Utilities.GetPlayers();
 
         if (players == null || players.Count == 0)
+        {
             return;
+        }
 
         MessageColorFormatter formatter = new MessageColorFormatter();
+        string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
         string formattedMessage = formatter.FormatMessage(ad.Message);
 
         foreach (var player in players.Where(p => p != null && p.IsValid && p.Connected == PlayerConnectedState.PlayerConnected && !p.IsHLTV))
         {
-            player.PrintToChat($"{Config.ChatPrefix} {formattedMessage}");
-
-            if (!ad.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))
+            if (string.IsNullOrWhiteSpace(ad.Flag))
             {
-                player.ExecuteClientCommand($"play {Config.PlaySoundName}");
+                continue;
+            }
+
+            bool hasPermission = ad.Flag == "all" || AdminManager.PlayerHasPermissions(player, ad.Flag);
+
+            if (hasPermission)
+            {
+                player.PrintToChat($"{formattedPrefix} {formattedMessage}");
+                if (!ad.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))
+                {
+                    player.ExecuteClientCommand($"play {Config.PlaySoundName}");
+                }
             }
         }
     }
