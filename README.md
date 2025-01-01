@@ -2,6 +2,8 @@
 
 This plugin allows you to schedule and display announcements in the chat at customizable intervals. Each announcement is accompanied by a brief sound effect to capture players' attention seamlessly.
 
+https://github.com/user-attachments/assets/aae16cc4-7c67-477a-8c89-437d5c035211
+
 ---
 
 ## Installation
@@ -87,10 +89,15 @@ Here is an example configuration file:
 
 ---
 
+Aquí está el contenido mejorado con la redacción ajustada, traducción al inglés donde corresponde, y una nueva columna sobre la prioridad:  
+
 ## TO-DO
-| Task                               | Status     | Description                                                                                     |
-|------------------------------------|------------|-------------------------------------------------------------------------------------------------|
-| Multiple ads with different intervals | **Complete**    | Configure multiple advertisements with varying intervals.                                       |
-| Option to target specific flags    | Pending    | Add an option to send messages only to users with specific admin flags.                         |
+| Task                                | Status       | Description                                                                                     | Priority   |
+|-------------------------------------|--------------|-------------------------------------------------------------------------------------------------|------------|
+| Multiple ads with different intervals | **Complete** | Configure multiple advertisements with varying intervals.                                       | High       |
+| Option to target specific flags     | **Complete** | Add an option to send messages only to users with specific admin flags.                         | Medium     |
+| Option to target specific maps      | **Complete** | Add an option to send messages only on specific maps.                                           | Medium     |
+| Option to disable sound             | **Complete** | Add an option to disable sound for announcements.                                               | Low        |
+| Multi-language ads                  | Pending | Allow users to configure their ad language and support ad configuration in multiple languages.  | Medium       |
 
 ---
