@@ -21,12 +21,15 @@ https://github.com/user-attachments/assets/aae16cc4-7c67-477a-8c89-437d5c035211
 ## Config
 The configuration file will be automatically generated when the plugin is first loaded. Below are the parameters you can customize:
 
-| Parameter        | Description                                                                                       | Required |
-|------------------|---------------------------------------------------------------------------------------------------|----------|
-| `ChatPrefix`     | Prefix displayed in the chat before each announcement. Supports colors.                          | **YES**  |
-| `PlaySoundName`  | Sound played when an announcement is sent. Leave it blank to disable.                             | **YES**   |
-| `sendAdsInOrder`  | Send announcements in an orderly manner, respecting the intervals.                             | **YES**   |
-| `Ads`            | List of advertisements to be sent. Each ad can be configured individually ***(see example below)***.    | **YES**  |
+| Parameter            | Description                                                                                       | Required |
+|----------------------|---------------------------------------------------------------------------------------------------|----------|
+| `ChatPrefix`         | Prefix displayed in the chat before each announcement. Supports colors.                           | **YES**  |
+| `PlaySoundName`      | Sound played when an announcement is sent. Leave it blank to disable.                             | **YES**  |
+| `sendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
+| `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **NO**   |
+| `WelcomeMessage`     | Custom welcome message displayed to players joining the server. Supports variables. | **NO**   |
+| `Ads`                | List of advertisements to be sent. Each ad can be configured individually ***(see example below)***. | **YES**  |
+
 
 ---
 
@@ -51,6 +54,8 @@ Here is an example configuration file:
   "ChatPrefix": " [{GREEN}AutomaticAds{WHITE}]{WHITE}",
   "PlaySoundName": "ui/panorama/popup_reveal_01",
   "sendAdsInOrder": true,
+  "UseWelcomeMessage": true,
+  "WelcomeMessage": "Welcome to the server! Playing on {map} with {players}/{maxplayers} players.",
   "Ads": [
     {
       "message": "{RED}AutomaticAds is the best plugin!",
@@ -86,6 +91,19 @@ Here is an example configuration file:
 `GREEN`, `RED`, `YELLOW`, `BLUE`, `ORANGE`, `WHITE`, `PURPLE`, `GREY`, `LIGHT_RED`, `LIGHT_BLUE`, `LIGHT_YELLOW`, `LIGHT_PURPLE`, `DARK_RED`, `BLUE_GREY`, `DARK_BLUE`, `LIME`, `OLIVE`, `GOLD`, `SILVER`, `MAGENTA`.
 
 ---
+
+### List of Available Variables:
+You can use the following placeholders in your messages and announcements:
+
+| Variable     | Description                                                   |
+|--------------|---------------------------------------------------------------|
+| `{ip}`       | The server's IP address.                                      |
+| `{hostname}` | The server's hostname.                                        |
+| `{map}`      | The current map being played.                                 |
+| `{time}`     | The current time in the server's timezone.                    |
+| `{date}`     | The current date.                                             |
+| `{players}`  | The current number of players online.                         |
+| `{maxplayers}`| The maximum number of players the server can hold.            |
 
 ## TO-DO
 | Task                                 | Status       | Description                                                                                     | Priority   |
