@@ -55,5 +55,6 @@ jobs:
         name: "AutomaticAds v${{ env.BUILD_NUMBER }}"
         tag: "build-${{ env.BUILD_NUMBER }}"
         body: |
-          Place the plugin in csgo/addons/counterstrikesharp/plugins/AutomaticAds
-          After the first server startup, the configuration file will be created in csgo/addons/counterstrikesharp/configs/plugins/AutomaticAds
+          Place the plugin in **`csgo/addons/counterstrikesharp/plugins/AutomaticAds`**.
+          
+          After the first server startup, the configuration file will be created in **`csgo/addons/counterstrikesharp/configs/plugins/AutomaticAds`**.
