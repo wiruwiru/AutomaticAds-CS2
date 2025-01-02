@@ -37,10 +37,11 @@ Each item in the `Ads` list represents a single advertisement. Here are the fiel
 | Parameter       | Description                                                                                         | Required |
 |-----------------|-----------------------------------------------------------------------------------------------------|----------|
 | `message`       | The message/announcement to send in the chat. Supports colors.                                      | **YES**  |
-| `interval`      | The interval (in seconds) between sending this ad. Must be between `10` and `3600`.                 | **YES**  |
-| `flag`          | Admin flag required to receive this message. Set to `all` to make it available to all players.     | **NO**   |
-| `map`           | The map where this ad should appear. Use `"all"` for all maps or specify a map name.                | **NO**   |
-| `disableSound`  | If `true`, no sound will be played when this ad is sent.                                            | **NO**   |
+| `interval`      | The interval (in seconds) between sending this ad. Must be between `10` and `3600` (if you don't add it to the announce configuration it will be set to `600` by default).                 | **NO**  |
+| `viewFlag`          | Flag required to view the message. Set it to `“all”` to make it available to all players (if you don't add it to the announce settings it will be set to `“all”` by default).     | **NO**   |
+| `excludeFlag`          | Users with this flag will not see the message. Set it to `“”` so that no players are excluded (if you do not add it to the announce settings it will be set to `“”` by default).     | **NO**   |
+| `map`           | The map where this announce should appear. Use `“all”` to show it on all maps or specify a map name (if you don't add it to the announce configuration it will be set to `“all”` by default).                | **NO**   |
+| `disableSound`  | If `true`, no sound will be played when this ad is sent (if you don't add it to the announce configuration it will be set to `false` by default).                                            | **NO**   |
 
 ---
 
@@ -51,32 +52,30 @@ Here is an example configuration file:
 {
   "ChatPrefix": " [{GREEN}AutomaticAds{WHITE}]{WHITE}",
   "PlaySoundName": "ui/panorama/popup_reveal_01",
+  "sendAdsInOrder": true,
   "Ads": [
     {
       "message": "{RED}AutomaticAds is the best plugin!",
-      "flag": "all",
+      "viewFlag": "all",
+      "excludeFlag": "@css/vip",
       "map": "all",
       "interval": 600,
       "disableSound": false
     },
     {
-      "message": "{BLUE}Welcome to the server! {RED}Make sure to read the rules.",
-      "flag": "all",
-      "map": "all",
-      "interval": 800,
-      "disableSound": false
+      "message": "{BLUE}Welcome to {hostname}! {RED}The time is {time} of {date}, playing in {map} with {players}/{maxplayers}. Connect {ip}",
+      "interval": 800
     },
     {
       "message": "{BLUE}Thank you for supporting the server! {GOLD}Your contribution is greatly appreciated.",
-      "flag": "@css/vip",
-      "map": "all",
+      "viewFlag": "@css/vip",
+      "map": "de_mirage",
       "interval": 1000,
       "disableSound": true
     },
     {
-      "message": "{GOLD}Congratulations, you are playing on Mirage.",
-      "flag": "all",
-      "map": "de_mirage",
+      "message": "{GOLD}Congratulations, you are playing on {map}.",
+      "excludeFlag": "@css/vip",
       "interval": 1400,
       "disableSound": true
     }
@@ -99,8 +98,8 @@ Here is an example configuration file:
 | Option to disable sound              | **Complete** | Add an option to disable sound for announcements.                                               | Low        |
 | Line breaks in messages              | **Complete** | Support for line breaks in messages (e.g., for displaying multiple lines of text).               | Low        |
 | Advertisements order configuration   | **Complete** | Add configuration to toggle between displaying configured ads in order or randomly.            | High       |
-| Support for server variables         | In Progress      | Allow the use of server variables to retrieve information such as IP, HOSTNAME, MAP, NEXTMAP, TIME, DATE, PLAYERS, MAXPLAYERS. | High     |
-| Exclude players with a certain flag  | In Progress      | Add an option to send messages to everyone with access except players with a certain flag, by setting the flag in the message (excludeflag). | Medium     |
+| Exclude players with a certain flag  | **Complete**      | Add an option to send messages to everyone with access except players with a certain flag, by setting the flag in the message (excludeflag). | Medium     |
+| Support for server variables         | **Complete**      | Allow the use of server variables to retrieve information such as IP, HOSTNAME, MAP, TIME, DATE, PLAYERS, MAXPLAYERS. | High     |
 | Support for changing message method  | Pending      | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose the method for each message. | Medium     |
 | Multi-language ads                   | Pending      | Allow users to configure their ad language and support ad configuration in multiple languages.  | Medium     |
 | Welcome message                      | Pending      | Configure a welcome message to be sent when a player connects to the server (OnPlayerConnectFull event). | Low       |

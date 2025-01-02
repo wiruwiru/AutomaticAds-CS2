@@ -10,7 +10,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.3";
+    public override string ModuleVersion => "1.0.4";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -168,14 +168,10 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         foreach (var player in players.Where(p => p != null && p.IsValid && p.Connected == PlayerConnectedState.PlayerConnected && !p.IsHLTV))
         {
-            if (string.IsNullOrWhiteSpace(ad.Flag))
-            {
-                continue;
-            }
+            bool canView = string.IsNullOrWhiteSpace(ad.ViewFlag) || ad.ViewFlag == "all" || AdminManager.PlayerHasPermissions(player, ad.ViewFlag);
+            bool isExcluded = !string.IsNullOrWhiteSpace(ad.ExcludeFlag) && AdminManager.PlayerHasPermissions(player, ad.ExcludeFlag);
 
-            bool hasPermission = ad.Flag == "all" || AdminManager.PlayerHasPermissions(player, ad.Flag);
-
-            if (hasPermission)
+            if (canView && !isExcluded)
             {
                 player.PrintToChat($"{formattedPrefix} {formattedMessage}");
                 if (!ad.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))

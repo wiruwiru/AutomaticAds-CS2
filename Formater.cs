@@ -1,4 +1,6 @@
-﻿using CounterStrikeSharp.API.Modules.Utils;
+﻿using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Modules.Utils;
+using CounterStrikeSharp.API.Modules.Cvars;
 
 namespace AutomaticAds;
 
@@ -37,7 +39,36 @@ public class MessageColorFormatter
         }
 
         message = message.Replace("\n", "\u2029");
-        message = System.Text.RegularExpressions.Regex.Replace(message, @"\{(.*?)\}", string.Empty);
+        message = ReplaceServerVariables(message);
+
+        return message;
+    }
+
+    private string ReplaceServerVariables(string message)
+    {
+        string ip = $"{ConVar.Find("ip")?.StringValue}:{ConVar.Find("hostport")?.GetPrimitiveValue<int>().ToString()}";
+        string hostname = ConVar.Find("hostname")?.StringValue ?? "Unknown";
+        string map = Server.MapName;
+        string time = DateTime.Now.ToString("HH:mm");
+        string date = DateTime.Now.ToString("yyyy-MM-dd");
+        int players = Utilities.GetPlayers().Count(p => !p.IsBot && !p.IsHLTV);
+        int maxPlayers = Server.MaxPlayers;
+
+        var variables = new Dictionary<string, string>
+        {
+            { "{ip}", ip },
+            { "{hostname}", hostname },
+            { "{map}", map },
+            { "{time}", time },
+            { "{date}", date },
+            { "{players}", players.ToString() },
+            { "{maxplayers}", maxPlayers.ToString() }
+        };
+
+        foreach (var variable in variables)
+        {
+            message = message.Replace(variable.Key, variable.Value);
+        }
 
         return message;
     }

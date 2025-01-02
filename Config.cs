@@ -23,15 +23,15 @@ public class BaseConfigs : BasePluginConfig
             Map = "all",
             Interval = 600,
             DisableSound = false,
-            Flag = "all"
+            ViewFlag = "all"
         },
         new AdConfig
         {
-            Message = "{BLUE}Welcome to the server! {RED}Make sure to read the rules.",
+            Message = "{BLUE}Welcome to {hostname}! {RED}The time is {time} of {date}, playing in {map} with {players}/{maxplayers}. Connect {ip}",
             Map = "all",
             Interval = 800,
             DisableSound = false,
-            Flag = "all"
+            ViewFlag = "all"
         },
         new AdConfig
         {
@@ -39,15 +39,16 @@ public class BaseConfigs : BasePluginConfig
             Map = "all",
             Interval = 1000,
             DisableSound = true,
-            Flag = "@css/vip"
+            ViewFlag = "@css/vip"
         },
         new AdConfig
         {
             Message = "{GOLD}Congratulations, you are playing on Mirage.",
+            ExcludeFlag = "@css/vip",
             Map = "de_mirage",
             Interval = 1400,
             DisableSound = true,
-            Flag = "all"
+            ViewFlag = "all"
         }
     };
 
@@ -56,8 +57,11 @@ public class BaseConfigs : BasePluginConfig
         [JsonPropertyName("message")]
         public string Message { get; set; } = string.Empty;
 
-        [JsonPropertyName("flag")]
-        public string? Flag { get; set; } = "all";
+        [JsonPropertyName("viewFlag")]
+        public string? ViewFlag { get; set; } = "all";
+
+        [JsonPropertyName("excludeFlag")]
+        public string? ExcludeFlag { get; set; } = "";
 
         [JsonPropertyName("map")]
         public string Map { get; set; } = "all";
