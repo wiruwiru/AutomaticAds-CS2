@@ -14,6 +14,12 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("sendAdsInOrder")]
     public bool SendAdsInOrder { get; set; } = false;
 
+    [JsonPropertyName("UseWelcomeMessage")]
+    public bool EnableWelcomeMessage { get; set; } = true;
+    
+    [JsonPropertyName("WelcomeMessage")]
+    public string WelcomeMessage { get; set; } = "Welcome to server!";
+
     [JsonPropertyName("Ads")]
     public List<AdConfig> Ads { get; set; } = new()
     {

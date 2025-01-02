@@ -3,6 +3,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Admin;
+using CounterStrikeSharp.API.Core.Attributes.Registration;
 
 namespace AutomaticAds;
 
@@ -10,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.4";
+    public override string ModuleVersion => "1.0.4b";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -180,6 +181,28 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                 }
             }
         }
+    }
+
+    [GameEventHandler]
+    public HookResult OnPlayerFullConnect(EventPlayerConnectFull @event, GameEventInfo info)
+    {
+        if (@event.Userid is not CCSPlayerController player || player.IsBot)
+            return HookResult.Continue;
+
+        if (Config.EnableWelcomeMessage && player.IsValid && !player.IsBot)
+        {
+            AddTimer(3.0f, () =>
+            {
+
+                MessageColorFormatter formatter = new MessageColorFormatter();
+                string prefix = formatter.FormatMessage(Config.ChatPrefix);
+                string welcomeMessage = formatter.FormatMessage(Config.WelcomeMessage);
+
+                player.PrintToChat($"{prefix} {welcomeMessage}");
+            });
+        }
+
+        return HookResult.Continue;
     }
 
     public override void Unload(bool hotReload)
