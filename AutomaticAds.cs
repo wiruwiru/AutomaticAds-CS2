@@ -11,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.4b";
+    public override string ModuleVersion => "1.0.5";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -191,15 +191,38 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         if (Config.EnableWelcomeMessage && player.IsValid && !player.IsBot)
         {
-            AddTimer(3.0f, () =>
+            foreach (var welcome in Config.Welcome)
             {
+                if (string.IsNullOrWhiteSpace(welcome.ViewFlag))
+                {
+                    welcome.ViewFlag = "all";
+                }
 
-                MessageColorFormatter formatter = new MessageColorFormatter();
-                string prefix = formatter.FormatMessage(Config.ChatPrefix);
-                string welcomeMessage = formatter.FormatMessage(Config.WelcomeMessage);
+                if (string.IsNullOrWhiteSpace(welcome.ExcludeFlag))
+                {
+                    welcome.ExcludeFlag = "";
+                }
 
-                player.PrintToChat($"{prefix} {welcomeMessage}");
-            });
+                bool canView = string.IsNullOrWhiteSpace(welcome.ViewFlag) || welcome.ViewFlag == "all" || AdminManager.PlayerHasPermissions(player, welcome.ViewFlag);
+                bool isExcluded = !string.IsNullOrWhiteSpace(welcome.ExcludeFlag) && AdminManager.PlayerHasPermissions(player, welcome.ExcludeFlag);
+
+                if (canView && !isExcluded)
+                {
+                    AddTimer(3.0f, () =>
+                    {
+                        MessageColorFormatter formatter = new MessageColorFormatter();
+                        string prefix = formatter.FormatMessage(Config.ChatPrefix);
+                        string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage);
+
+                        player.PrintToChat($"{prefix} {welcomeMessage}");
+
+                        if (!welcome.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))
+                        {
+                            player.ExecuteClientCommand($"play {Config.PlaySoundName}");
+                        }
+                    });
+                }
+            }
         }
 
         return HookResult.Continue;

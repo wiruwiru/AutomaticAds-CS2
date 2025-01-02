@@ -26,7 +26,7 @@ The configuration file will be automatically generated when the plugin is first 
 | `ChatPrefix`         | Prefix displayed in the chat before each announcement. Supports colors.                           | **YES**  |
 | `PlaySoundName`      | Sound played when an announcement is sent. Leave it blank to disable.                             | **YES**  |
 | `sendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
-| `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **NO**   |
+| `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **YES**   |
 | `WelcomeMessage`     | Custom welcome message displayed to players joining the server. Supports variables. | **NO**   |
 | `Ads`                | List of advertisements to be sent. Each ad can be configured individually ***(see example below)***. | **YES**  |
 
@@ -55,7 +55,14 @@ Here is an example configuration file:
   "PlaySoundName": "ui/panorama/popup_reveal_01",
   "sendAdsInOrder": true,
   "UseWelcomeMessage": true,
-  "WelcomeMessage": "Welcome to the server! Playing on {map} with {players}/{maxplayers} players.",
+  "Welcome": [
+    {
+      "WelcomeMessage": "{BLUE}Welcome to the server! {RED}Playing on {map} with {players}/{maxplayers} players.",
+      "viewFlag": "all",
+      "excludeFlag": "",
+      "disableSound": false
+    }
+  ],
   "Ads": [
     {
       "message": "{RED}AutomaticAds is the best plugin!",
@@ -93,8 +100,7 @@ Here is an example configuration file:
 ---
 
 ### List of Available Variables:
-You can use the following placeholders in your messages and announcements:
-
+You can use the following placeholders in your announcements:
 | Variable     | Description                                                   |
 |--------------|---------------------------------------------------------------|
 | `{ip}`       | The server's IP address.                                      |
@@ -118,6 +124,7 @@ You can use the following placeholders in your messages and announcements:
 | Line breaks in messages              | **Complete** | Support for line breaks in messages ***(e.g., for displaying multiple lines of text)***.               | Low        |
 | Welcome message                      | **Complete**      | Configure a welcome message to be sent when a player connects to the server **(OnPlayerConnectFull event)**. | Low       |
 | Support for changing message method  | In progress      | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose the method for each message. | Medium     |
+| PlayerName variable                      | Pending      | Add the {PlayerName} variable to return the name of the user in the advertisement for better personalization of the advertisement. | Low       |
 | Multi-language ads                   | Pending      | Allow users to configure their ad language and support ad configuration in multiple languages.  | Medium     |
 
 ---

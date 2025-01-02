@@ -15,10 +15,19 @@ public class BaseConfigs : BasePluginConfig
     public bool SendAdsInOrder { get; set; } = false;
 
     [JsonPropertyName("UseWelcomeMessage")]
-    public bool EnableWelcomeMessage { get; set; } = true;
-    
-    [JsonPropertyName("WelcomeMessage")]
-    public string WelcomeMessage { get; set; } = "Welcome to server!";
+    public bool EnableWelcomeMessage { get; set; } = false;
+
+    [JsonPropertyName("Welcome")]
+    public List<WelcomeConfig> Welcome { get; set; } = new()
+    {
+        new WelcomeConfig
+        {
+            WelcomeMessage = "{BLUE}Welcome to the server! {RED}Playing on {map} with {players}/{maxplayers} players.",
+            ViewFlag = "all",
+            ExcludeFlag = "",
+            DisableSound = false
+        }
+    };
 
     [JsonPropertyName("Ads")]
     public List<AdConfig> Ads { get; set; } = new()
@@ -73,7 +82,22 @@ public class BaseConfigs : BasePluginConfig
         public string Map { get; set; } = "all";
 
         [JsonPropertyName("interval")]
-        public float Interval { get; set; } = 600;
+        public float Interval { get; set; } = 30;
+
+        [JsonPropertyName("disableSound")]
+        public bool DisableSound { get; set; } = false;
+    }
+
+    public class WelcomeConfig
+    {
+        [JsonPropertyName("WelcomeMessage")]
+        public string WelcomeMessage { get; set; } = string.Empty;
+
+        [JsonPropertyName("viewFlag")]
+        public string? ViewFlag { get; set; } = "all";
+
+        [JsonPropertyName("excludeFlag")]
+        public string? ExcludeFlag { get; set; } = "";
 
         [JsonPropertyName("disableSound")]
         public bool DisableSound { get; set; } = false;
