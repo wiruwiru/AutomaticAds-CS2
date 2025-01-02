@@ -123,8 +123,9 @@ You can use the following placeholders in your announcements:
 | Option to disable sound              | **Complete** | Add an option to disable sound for announcements.                                               | Low        |
 | Line breaks in messages              | **Complete** | Support for line breaks in messages ***(e.g., for displaying multiple lines of text)***.               | Low        |
 | Welcome message                      | **Complete**      | Configure a welcome message to be sent when a player connects to the server **(OnPlayerConnectFull event)**. | Low       |
+| Prevent welcome message from repeating | In progress **Bug**       | Adjust the welcome message so that it is sent only on a player's connection and not on every OnMapStart.. | High |
 | Support for changing message method  | In progress      | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose the method for each message. | Medium     |
-| PlayerName variable                      | Pending      | Add the {PlayerName} variable to return the name of the user in the advertisement for better personalization of the advertisement. | Low       |
+| PlayerName variable                      | In progress      | Add the {PlayerName} variable to return the name of the user in the advertisement for better personalization of the advertisement. | Low       |
 | Multi-language ads                   | Pending      | Allow users to configure their ad language and support ad configuration in multiple languages.  | Medium     |
 
 ---
