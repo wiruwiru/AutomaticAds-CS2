@@ -26,7 +26,7 @@ The configuration file will be automatically generated when the plugin is first 
 | `ChatPrefix`     | Prefix displayed in the chat before each announcement. Supports colors.                          | **YES**  |
 | `PlaySoundName`  | Sound played when an announcement is sent. Leave it blank to disable.                             | **YES**   |
 | `sendAdsInOrder`  | Send announcements in an orderly manner, respecting the intervals.                             | **YES**   |
-| `Ads`            | List of advertisements to be sent. Each ad can be configured individually (see example below).    | **YES**  |
+| `Ads`            | List of advertisements to be sent. Each ad can be configured individually ***(see example below)***.    | **YES**  |
 
 ---
 
@@ -40,7 +40,7 @@ Each item in the `Ads` list represents a single advertisement. Here are the fiel
 | `viewFlag`          | Flag required to view the message. Set it to `“all”` to make it available to all players ***(if you don't add it to the announce settings it will be set to `“all”` by default)***.     | **NO**   |
 | `excludeFlag`          | Users with this flag will not see the message. Set it to `“”` so that no players are excluded ***(if you do not add it to the announce settings it will be set to `“”` by default)***.     | **NO**   |
 | `map`           | The map where this announce should appear. Use `“all”` to show it on all maps or specify a map name ***(if you don't add it to the announce configuration it will be set to `“all”` by default)***.                | **NO**   |
-| `disableSound`  | If `true`, no sound will be played when this ad is sent (if you don't add it to the announce configuration it will be set to `false` by default).                                            | **NO**   |
+| `disableSound`  | If `true`, no sound will be played when this ad is sent ***(if you don't add it to the announce configuration it will be set to `false` by default)***.                                            | **NO**   |
 
 ---
 
