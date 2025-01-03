@@ -1,0 +1,7 @@
+{
+  "NoPermissions": "Você não tem permissão para executar este comando.",
+  "Enabled": "O plugin foi habilitado.",
+  "Disabled": "O plugin foi desabilitado.",
+  "Reloaded": "O plugin foi recarregado.",
+  "FailedToReload": "Falha ao recarregar o plugin."
+}

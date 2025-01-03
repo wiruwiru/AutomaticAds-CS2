@@ -11,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.6";
+    public override string ModuleVersion => "1.0.7";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -44,35 +44,62 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         AddCommand("ads_disable", "Disables the AutomaticAds plugin.", (player, commandInfo) =>
         {
+
+            if (player == null || commandInfo == null) return;
             MessageColorFormatter formatter = new MessageColorFormatter();
             string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
 
+            var permissionValidator = new RequiresPermissions("@css/root");
+            if (!permissionValidator.CanExecuteCommand(player))
+            {
+                player.PrintToChat($"{formattedPrefix} {Localizer["NoPermissions"]}");
+                return;
+            }
+
             Server.ExecuteCommand("css_plugins unload AutomaticAds");
-            commandInfo.ReplyToCommand($"{formattedPrefix} Plugin has been disabled.");
+            commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Disabled"]}");
         });
 
         AddCommand("ads_enable", "Enable the AutomaticAds plugin.", (player, commandInfo) =>
         {
+
+            if (player == null || commandInfo == null) return;
             MessageColorFormatter formatter = new MessageColorFormatter();
             string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
 
+            var permissionValidator = new RequiresPermissions("@css/root");
+            if (!permissionValidator.CanExecuteCommand(player))
+            {
+                player.PrintToChat($"{formattedPrefix} {Localizer["NoPermissions"]}");
+                return;
+            }
+
             Server.ExecuteCommand("css_plugins load AutomaticAds");
-            commandInfo.ReplyToCommand($"{formattedPrefix} Plugin has been enabled.");
+            commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Enabled"]}");
         });
 
         AddCommand("ads_reload", "Reloads the AutomaticAds plugin configuration.", (player, commandInfo) =>
         {
+
+            if (player == null || commandInfo == null) return;
             MessageColorFormatter formatter = new MessageColorFormatter();
             string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
+
+            var permissionValidator = new RequiresPermissions("@css/root");
+            if (!permissionValidator.CanExecuteCommand(player))
+            {
+                player.PrintToChat($"{formattedPrefix} {Localizer["NoPermissions"]}");
+                return;
+            }
 
             try
             {
                 Server.ExecuteCommand("css_plugins reload AutomaticAds");
-                commandInfo.ReplyToCommand($"{formattedPrefix} Plugin has been reloaded.");
+                commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Reloaded"]}");
             }
             catch (Exception ex)
             {
-                commandInfo.ReplyToCommand($"{formattedPrefix} Failed to reload plugin: {ex.Message}");
+                commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["FailedToReload"]}: {ex.Message}");
             }
         });
     }

@@ -1,0 +1,7 @@
+{
+    "NoPermissions": "You do not have permission to execute this command.",
+    "Enabled": "Plugin has been enabled.",
+    "Disabled": "Plugin has been disabled",
+    "Reloaded": "Plugin has been reloaded",
+    "FailedToReload": "Failed to reload plugin"
+}
