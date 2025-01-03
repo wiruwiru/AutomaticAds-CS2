@@ -27,7 +27,7 @@ The configuration file will be automatically generated when the plugin is first 
 | `PlaySoundName`      | Sound played when an announcement is sent. Leave it blank to disable.                             | **YES**  |
 | `sendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
 | `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **YES**   |
-| `WelcomeMessage`     | Custom welcome message displayed to players joining the server. Supports variables. | **NO**   |
+| `Welcome`     | Configuration for the welcome announcement. Supports variables ***(see example below)***. | **NO**   |
 | `Ads`                | List of advertisements to be sent. Each ad can be configured individually ***(see example below)***. | **YES**  |
 
 
@@ -57,7 +57,7 @@ Here is an example configuration file:
   "UseWelcomeMessage": true,
   "Welcome": [
     {
-      "WelcomeMessage": "{BLUE}Welcome to the server! {RED}Playing on {map} with {players}/{maxplayers} players.",
+      "WelcomeMessage": "{BLUE}Welcome to the server {playername}! {RED}Playing on {map} with {players}/{maxplayers} players.",
       "viewFlag": "all",
       "excludeFlag": "",
       "disableSound": false
@@ -108,6 +108,7 @@ You can use the following placeholders in your announcements:
 | `{map}`      | The current map being played.                                 |
 | `{time}`     | The current time in the server's timezone.                    |
 | `{date}`     | The current date.                                             |
+| `{playername}`  | The name the player has on Steam                         |
 | `{players}`  | The current number of players online.                         |
 | `{maxplayers}`| The maximum number of players the server can hold.            |
 
@@ -123,9 +124,9 @@ You can use the following placeholders in your announcements:
 | Option to disable sound              | **Complete** | Add an option to disable sound for announcements.                                               | Low        |
 | Line breaks in messages              | **Complete** | Support for line breaks in messages ***(e.g., for displaying multiple lines of text)***.               | Low        |
 | Welcome message                      | **Complete**      | Configure a welcome message to be sent when a player connects to the server **(OnPlayerConnectFull event)**. | Low       |
-| Prevent welcome message from repeating | In progress **Bug**       | Adjust the welcome message so that it is sent only on a player's connection and not on every OnMapStart.. | High |
+| PlayerName variable                      | **Complete**      | Add the {PlayerName} variable to return the name of the user in the advertisement for better personalization of the advertisement. | Low       |
+| Enable, Disable, and Reload Plugin | **Complete**       | Add commands to enable, disable, and reload plugins for easier management. | Low |
 | Support for changing message method  | In progress      | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose the method for each message. | Medium     |
-| PlayerName variable                      | In progress      | Add the {PlayerName} variable to return the name of the user in the advertisement for better personalization of the advertisement. | Low       |
 | Multi-language ads                   | Pending      | Allow users to configure their ad language and support ad configuration in multiple languages.  | Medium     |
 
 ---

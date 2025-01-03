@@ -6,7 +6,7 @@ namespace AutomaticAds;
 
 public class MessageColorFormatter
 {
-    public string FormatMessage(string message)
+    public string FormatMessage(string message, string playerName = "")
     {
         var validColors = new Dictionary<string, string>
         {
@@ -38,6 +38,7 @@ public class MessageColorFormatter
             message = message.Replace(color.Key, color.Value);
         }
 
+        message = message.Replace("{playername}", playerName);
         message = message.Replace("\n", "\u2029");
         message = ReplaceServerVariables(message);
 

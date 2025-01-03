@@ -11,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.5";
+    public override string ModuleVersion => "1.0.6";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -36,6 +36,45 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         RegisterListener<Listeners.OnMapEnd>(() => Unload(true));
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
+
+        if (!string.IsNullOrWhiteSpace(Server.MapName))
+        {
+            OnMapStart(Server.MapName);
+        }
+
+        AddCommand("ads_disable", "Disables the AutomaticAds plugin.", (player, commandInfo) =>
+        {
+            MessageColorFormatter formatter = new MessageColorFormatter();
+            string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
+
+            Server.ExecuteCommand("css_plugins unload AutomaticAds");
+            commandInfo.ReplyToCommand($"{formattedPrefix} Plugin has been disabled.");
+        });
+
+        AddCommand("ads_enable", "Enable the AutomaticAds plugin.", (player, commandInfo) =>
+        {
+            MessageColorFormatter formatter = new MessageColorFormatter();
+            string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
+
+            Server.ExecuteCommand("css_plugins load AutomaticAds");
+            commandInfo.ReplyToCommand($"{formattedPrefix} Plugin has been enabled.");
+        });
+
+        AddCommand("ads_reload", "Reloads the AutomaticAds plugin configuration.", (player, commandInfo) =>
+        {
+            MessageColorFormatter formatter = new MessageColorFormatter();
+            string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
+
+            try
+            {
+                Server.ExecuteCommand("css_plugins reload AutomaticAds");
+                commandInfo.ReplyToCommand($"{formattedPrefix} Plugin has been reloaded.");
+            }
+            catch (Exception ex)
+            {
+                commandInfo.ReplyToCommand($"{formattedPrefix} Failed to reload plugin: {ex.Message}");
+            }
+        });
     }
 
     public required BaseConfigs Config { get; set; }
@@ -165,7 +204,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         MessageColorFormatter formatter = new MessageColorFormatter();
         string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-        string formattedMessage = formatter.FormatMessage(ad.Message);
+        // string formattedMessage = formatter.FormatMessage(ad.Message);
 
         foreach (var player in players.Where(p => p != null && p.IsValid && p.Connected == PlayerConnectedState.PlayerConnected && !p.IsHLTV))
         {
@@ -174,6 +213,8 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
             if (canView && !isExcluded)
             {
+                string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName);
+
                 player.PrintToChat($"{formattedPrefix} {formattedMessage}");
                 if (!ad.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))
                 {
@@ -212,7 +253,8 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                     {
                         MessageColorFormatter formatter = new MessageColorFormatter();
                         string prefix = formatter.FormatMessage(Config.ChatPrefix);
-                        string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage);
+                        // string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage);
+                        string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage, player.PlayerName);
 
                         player.PrintToChat($"{prefix} {welcomeMessage}");
 

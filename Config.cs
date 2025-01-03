@@ -12,17 +12,17 @@ public class BaseConfigs : BasePluginConfig
     public string? PlaySoundName { get; set; } = "ui/panorama/popup_reveal_01";
 
     [JsonPropertyName("sendAdsInOrder")]
-    public bool SendAdsInOrder { get; set; } = false;
+    public bool SendAdsInOrder { get; set; } = true;
 
     [JsonPropertyName("UseWelcomeMessage")]
-    public bool EnableWelcomeMessage { get; set; } = false;
+    public bool EnableWelcomeMessage { get; set; } = true;
 
     [JsonPropertyName("Welcome")]
     public List<WelcomeConfig> Welcome { get; set; } = new()
     {
         new WelcomeConfig
         {
-            WelcomeMessage = "{BLUE}Welcome to the server! {RED}Playing on {map} with {players}/{maxplayers} players.",
+            WelcomeMessage = "{BLUE}Welcome to the server {playername}! {RED}Playing on {map} with {players}/{maxplayers} players.",
             ViewFlag = "all",
             ExcludeFlag = "",
             DisableSound = false
@@ -58,7 +58,7 @@ public class BaseConfigs : BasePluginConfig
         },
         new AdConfig
         {
-            Message = "{GOLD}Congratulations, you are playing on Mirage.",
+            Message = "{GOLD}Congratulations {playername}, you are playing on Mirage.",
             ExcludeFlag = "@css/vip",
             Map = "de_mirage",
             Interval = 1400,
