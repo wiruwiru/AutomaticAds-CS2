@@ -38,7 +38,16 @@ public class MessageColorFormatter
             message = message.Replace(color.Key, color.Value);
         }
 
-        message = message.Replace("{playername}", playerName);
+        // message = message.Replace("{playername}", playerName);
+        if (string.IsNullOrWhiteSpace(playerName))
+        {
+            message = message.Replace("{playername}", "");
+        }
+        else
+        {
+            message = message.Replace("{playername}", playerName);
+        }
+
         message = message.Replace("\n", "\u2029");
         message = ReplaceServerVariables(message);
 
