@@ -11,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.7b";
+    public override string ModuleVersion => "1.0.8";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -21,12 +21,20 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     private int currentAdIndex = 0;
     private string _currentMap = "";
+    private CCSGameRules? _gGameRulesProxy;
 
     public override void Load(bool hotReload)
     {
+
         RegisterListener<Listeners.OnMapStart>(mapName =>
         {
             _currentMap = mapName;
+
+            Server.NextFrame(() =>
+            {
+                _gGameRulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules")
+                .First().GameRules ?? throw new Exception("Failed to find game rules proxy entity.");
+            });
         });
 
         if (hotReload)
@@ -41,42 +49,6 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         {
             OnMapStart(Server.MapName);
         }
-
-        AddCommand("ads_disable", "Disables the AutomaticAds plugin.", (player, commandInfo) =>
-        {
-
-            if (player == null || commandInfo == null) return;
-            MessageColorFormatter formatter = new MessageColorFormatter();
-            string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-
-            var permissionValidator = new RequiresPermissions("@css/root");
-            if (!permissionValidator.CanExecuteCommand(player))
-            {
-                player.PrintToChat($"{formattedPrefix} {Localizer["NoPermissions"]}");
-                return;
-            }
-
-            Server.ExecuteCommand("css_plugins unload AutomaticAds");
-            commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Disabled"]}");
-        });
-
-        AddCommand("ads_enable", "Enable the AutomaticAds plugin.", (player, commandInfo) =>
-        {
-
-            if (player == null || commandInfo == null) return;
-            MessageColorFormatter formatter = new MessageColorFormatter();
-            string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-
-            var permissionValidator = new RequiresPermissions("@css/root");
-            if (!permissionValidator.CanExecuteCommand(player))
-            {
-                player.PrintToChat($"{formattedPrefix} {Localizer["NoPermissions"]}");
-                return;
-            }
-
-            Server.ExecuteCommand("css_plugins load AutomaticAds");
-            commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Enabled"]}");
-        });
 
         AddCommand("ads_reload", "Reloads the AutomaticAds plugin configuration.", (player, commandInfo) =>
         {
@@ -214,6 +186,12 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             return false;
         }
 
+        bool isWarmup = _gGameRulesProxy != null && _gGameRulesProxy.WarmupPeriod;
+        if ((ad.OnlyInWarmup && !isWarmup) || (!ad.OnlyInWarmup && isWarmup))
+        {
+            return false;
+        }
+
         var secondsSinceLastMessage = (int)(DateTime.Now - lastAdTimes[ad]).TotalSeconds;
 
         bool canSend = secondsSinceLastMessage >= ad.Interval;
@@ -275,7 +253,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
                 if (canView && !isExcluded)
                 {
-                    AddTimer(3.0f, () =>
+                    AddTimer(Config.WelcomeDelay, () =>
                     {
                         MessageColorFormatter formatter = new MessageColorFormatter();
                         string prefix = formatter.FormatMessage(Config.ChatPrefix);

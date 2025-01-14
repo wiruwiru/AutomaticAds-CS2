@@ -17,6 +17,9 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("UseWelcomeMessage")]
     public bool EnableWelcomeMessage { get; set; } = true;
 
+    [JsonPropertyName("WelcomeDelay")]
+    public float WelcomeDelay { get; set; } = 3.0f;
+
     [JsonPropertyName("Welcome")]
     public List<WelcomeConfig> Welcome { get; set; } = new()
     {
@@ -86,6 +89,9 @@ public class BaseConfigs : BasePluginConfig
 
         [JsonPropertyName("disableSound")]
         public bool DisableSound { get; set; } = false;
+
+        [JsonPropertyName("onlyInWarmup")]
+        public bool OnlyInWarmup { get; set; } = false;
     }
 
     public class WelcomeConfig
