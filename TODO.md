@@ -12,6 +12,6 @@
 | Welcome message                      | **Complete**      | Configure a welcome message to be sent when a player connects to the server **(OnPlayerConnectFull event)**. | Low       |
 | PlayerName variable                      | **Complete**      | Add the {PlayerName} variable to return the name of the user in the advertisement for better personalization of the advertisement. | Low       |
 | Reload Plugin | **Complete**       | Add command to reload plugin for easier management. | Low |
-| Common commands shortcut             | Pending  | Add support for shortcut commands like `!help`, to display common server commands, and `!dc`, to send an announcement with the Discord link. | High       |
+| Common commands shortcut             | **Complete**  | Add support for shortcut commands like `!help`, to display common server commands, and `!dc`, to send an announcement with the Discord link. | High       |
 | Support for changing message method  | Pending      | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose the method for each message. | Medium     |
 | Multi-language ads                   | Pending      | Allow users to configure their ad language and support ad configuration in multiple languages.  | Medium     |
