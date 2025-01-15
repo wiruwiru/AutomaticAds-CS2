@@ -8,8 +8,8 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("ChatPrefix")]
     public string ChatPrefix { get; set; } = " [{GREEN}AutomaticAds{WHITE}]{WHITE}";
 
-    [JsonPropertyName("PlaySoundName")]
-    public string? PlaySoundName { get; set; } = "ui/panorama/popup_reveal_01";
+    [JsonPropertyName("GlobalPlaySound")]
+    public string? GlobalPlaySound { get; set; } = "ui/panorama/popup_reveal_01";
 
     [JsonPropertyName("sendAdsInOrder")]
     public bool SendAdsInOrder { get; set; } = true;
@@ -66,7 +66,9 @@ public class BaseConfigs : BasePluginConfig
             Map = "de_mirage",
             Interval = 1400,
             DisableSound = true,
-            ViewFlag = "all"
+            ViewFlag = "all",
+            triggerAd = "map",
+            PlaySoundName = "sound/ui/beep22.wav"
         }
     };
 
@@ -92,6 +94,12 @@ public class BaseConfigs : BasePluginConfig
 
         [JsonPropertyName("onlyInWarmup")]
         public bool OnlyInWarmup { get; set; } = false;
+
+        [JsonPropertyName("triggerAd")]
+        public string? triggerAd { get; set; } = null;
+
+        [JsonPropertyName("playSoundName")]
+        public string? PlaySoundName { get; set; } = null;
     }
 
     public class WelcomeConfig
@@ -107,5 +115,6 @@ public class BaseConfigs : BasePluginConfig
 
         [JsonPropertyName("disableSound")]
         public bool DisableSound { get; set; } = false;
+
     }
 }

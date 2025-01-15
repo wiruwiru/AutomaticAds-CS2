@@ -11,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.8";
+    public override string ModuleVersion => "1.0.9";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -74,6 +74,27 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                 commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["FailedToReload"]}: {ex.Message}");
             }
         });
+
+        foreach (var ad in Config.Ads.Where(ad => !string.IsNullOrWhiteSpace(ad.triggerAd)))
+        {
+            AddCommand(ad.triggerAd!, $"Sends the advertisement '{ad.triggerAd}' to the user using the command.", (player, commandInfo) =>
+            {
+                if (player == null) return;
+
+                MessageColorFormatter formatter = new MessageColorFormatter();
+                string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
+                string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName);
+
+                player.PrintToChat($"{formattedPrefix} {formattedMessage}");
+
+                string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
+                if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+                {
+                    player.ExecuteClientCommand($"play {soundToPlay}");
+                }
+            });
+        }
+
     }
 
     public required BaseConfigs Config { get; set; }
@@ -112,9 +133,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             config.ChatPrefix = "[AutomaticAds]";
         }
 
-        if (string.IsNullOrWhiteSpace(config.PlaySoundName))
+        if (string.IsNullOrWhiteSpace(config.GlobalPlaySound))
         {
-            config.PlaySoundName = "";
+            config.GlobalPlaySound = "";
         }
     }
 
@@ -220,9 +241,11 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                 string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName);
 
                 player.PrintToChat($"{formattedPrefix} {formattedMessage}");
-                if (!ad.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))
+
+                string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
+                if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
                 {
-                    player.ExecuteClientCommand($"play {Config.PlaySoundName}");
+                    player.ExecuteClientCommand($"play {soundToPlay}");
                 }
             }
         }
@@ -261,9 +284,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
                         player.PrintToChat($"{prefix} {welcomeMessage}");
 
-                        if (!welcome.DisableSound && !string.IsNullOrWhiteSpace(Config.PlaySoundName))
+                        if (!welcome.DisableSound && !string.IsNullOrWhiteSpace(Config.GlobalPlaySound))
                         {
-                            player.ExecuteClientCommand($"play {Config.PlaySoundName}");
+                            player.ExecuteClientCommand($"play {Config.GlobalPlaySound}");
                         }
                     });
                 }
