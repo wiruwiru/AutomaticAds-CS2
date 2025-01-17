@@ -11,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.0.9";
+    public override string ModuleVersion => "1.1.0";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -75,24 +75,27 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             }
         });
 
-        foreach (var ad in Config.Ads.Where(ad => !string.IsNullOrWhiteSpace(ad.triggerAd)))
+        foreach (var ad in Config.Ads.Where(ad => ad.triggerAd != null && ad.triggerAd.Any()))
         {
-            AddCommand(ad.triggerAd!, $"Sends the advertisement '{ad.triggerAd}' to the user using the command.", (player, commandInfo) =>
+            foreach (var command in ad.triggerAd!)
             {
-                if (player == null) return;
-
-                MessageColorFormatter formatter = new MessageColorFormatter();
-                string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-                string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName);
-
-                player.PrintToChat($"{formattedPrefix} {formattedMessage}");
-
-                string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
-                if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+                AddCommand(command, $"Sends the advertisement '{command}' to the user using the command.", (player, commandInfo) =>
                 {
-                    player.ExecuteClientCommand($"play {soundToPlay}");
-                }
-            });
+                    if (player == null) return;
+
+                    MessageColorFormatter formatter = new MessageColorFormatter();
+                    string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
+                    string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName);
+
+                    player.PrintToChat($"{formattedPrefix} {formattedMessage}");
+
+                    string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
+                    if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+                    {
+                        player.ExecuteClientCommand($"play {soundToPlay}");
+                    }
+                });
+            }
         }
 
     }
@@ -126,6 +129,11 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             {
                 ad.Interval = 10;
             }
+
+            if (ad.triggerAd != null)
+            {
+                ad.triggerAd = ad.triggerAd.Distinct().ToList();
+            }
         }
 
         if (config.ChatPrefix.Length > 80)
@@ -148,11 +156,12 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     {
         if (Config.SendAdsInOrder)
         {
+            Config.Ads = Config.Ads.Where(ad => !ad.Disableinterval).ToList();
             ScheduleNextAd();
         }
         else
         {
-            foreach (var ad in Config.Ads)
+            foreach (var ad in Config.Ads.Where(ad => !ad.Disableinterval))
             {
                 var timer = AddTimer(1.00f, () =>
                 {
@@ -191,6 +200,11 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     private bool CanSendAd(BaseConfigs.AdConfig ad)
     {
+        if (ad.Disableinterval)
+        {
+            return false;
+        }
+
         if (!lastAdTimes.ContainsKey(ad))
         {
             lastAdTimes[ad] = DateTime.MinValue;
@@ -215,8 +229,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         var secondsSinceLastMessage = (int)(DateTime.Now - lastAdTimes[ad]).TotalSeconds;
 
-        bool canSend = secondsSinceLastMessage >= ad.Interval;
-        return canSend;
+        return secondsSinceLastMessage >= ad.Interval;
     }
 
     private void SendAdToPlayers(BaseConfigs.AdConfig ad)

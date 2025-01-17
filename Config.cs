@@ -67,7 +67,7 @@ public class BaseConfigs : BasePluginConfig
             Interval = 1400,
             DisableSound = true,
             ViewFlag = "all",
-            triggerAd = "map",
+            triggerAd = ["map", "currentmap"],
             PlaySoundName = "sound/ui/beep22.wav"
         }
     };
@@ -96,7 +96,10 @@ public class BaseConfigs : BasePluginConfig
         public bool OnlyInWarmup { get; set; } = false;
 
         [JsonPropertyName("triggerAd")]
-        public string? triggerAd { get; set; } = null;
+        public List<string>? triggerAd { get; set; } = new();
+
+        [JsonPropertyName("Disableinterval")]
+        public bool Disableinterval { get; set; } = false;
 
         [JsonPropertyName("playSoundName")]
         public string? PlaySoundName { get; set; } = null;

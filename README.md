@@ -47,8 +47,8 @@ Each item in the `Ads` list represents a single advertisement. Here are the fiel
 | `disableSound`  | If `true`, no sound will be played when this ad is sent ***(if you don't add it to the announce configuration it will be set to `false` by default)***.                                            | **NO**   |
 | `onlyInWarmup`  | If `true`, the ad will only be sent during the warmup period. If `false` or not specified, it will be sent normally regardless of the warmup ***(if you don't add it to the announce configuration it will be set to `false` by default)***.   | **NO**   |
 | `playSoundName` | The specific sound to play when this announcement is sent. If not set, `GlobalPlaySound` will be used if set, provided `disableSound` is not `true`. | **NO**   |
-| `triggerAd`     | A command that players can use to view this announcement before it is sent automatically. | **NO**   |
-
+| `triggerAd`     | An array of commands that players can use to view this announcement before it is sent automatically. For example: `["command1", "command2"]`. | **NO**   |
+| `disableinterval`     | If `true`, this ad will not be sent automatically. It will only be sent manually via `triggerAd` commands. (if you don't add it to the announce configuration it will be set to `false` by default). | **NO**   |
 ---
 
 ## Configuration Example
@@ -91,9 +91,9 @@ Here is an example configuration file:
     {
       "message": "{GOLD}Congratulations, you are playing on {map}.",
       "excludeFlag": "@css/vip",
-      "interval": 1400,
       "disableSound": true,
-      "triggerAd": "map",
+      "triggerAd": ["map", "currentmap"],
+      "Disableinterval": true,
       "playSoundName": "sound/ui/beep22.wav"
     }
   ],
