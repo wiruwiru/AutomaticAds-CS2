@@ -6,7 +6,7 @@ namespace AutomaticAds;
 public class BaseConfigs : BasePluginConfig
 {
     [JsonPropertyName("ChatPrefix")]
-    public string ChatPrefix { get; set; } = " [{GREEN}AutomaticAds{WHITE}]{WHITE}";
+    public string ChatPrefix { get; set; } = "[{GREEN}AutomaticAds{WHITE}]{WHITE}";
 
     [JsonPropertyName("GlobalPlaySound")]
     public string? GlobalPlaySound { get; set; } = "ui/panorama/popup_reveal_01";
@@ -37,7 +37,7 @@ public class BaseConfigs : BasePluginConfig
     {
         new AdConfig
         {
-            Message = "{RED}AutomaticAds is the best plugin!",
+            Message = "{prefix} {RED}AutomaticAds is the best plugin!",
             Map = "all",
             Interval = 600,
             DisableSound = false,
@@ -45,7 +45,7 @@ public class BaseConfigs : BasePluginConfig
         },
         new AdConfig
         {
-            Message = "{BLUE}Welcome to {hostname}! {RED}The time is {time} of {date}, playing in {map} with {players}/{maxplayers}. Connect {ip}",
+            Message = "{prefix} {BLUE}Welcome to {hostname}! {RED}The time is {time} of {date}, playing in {map} with {players}/{maxplayers}. Connect {ip}",
             Map = "all",
             Interval = 800,
             DisableSound = false,
@@ -53,7 +53,7 @@ public class BaseConfigs : BasePluginConfig
         },
         new AdConfig
         {
-            Message = "{BLUE}Thank you for supporting the server! {GOLD}Your contribution is greatly appreciated.",
+            Message = "{prefix} {BLUE}Thank you for supporting the server! {GOLD}Your contribution is greatly appreciated.",
             Map = "all",
             Interval = 1000,
             DisableSound = true,
@@ -61,7 +61,7 @@ public class BaseConfigs : BasePluginConfig
         },
         new AdConfig
         {
-            Message = "{GOLD}Congratulations {playername}, you are playing on Mirage.",
+            Message = "{prefix} {GOLD}Congratulations {playername}, you are playing on Mirage.",
             ExcludeFlag = "@css/vip",
             Map = "de_mirage",
             Interval = 1400,
