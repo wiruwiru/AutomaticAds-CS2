@@ -6,7 +6,7 @@ namespace AutomaticAds;
 
 public class MessageColorFormatter
 {
-    public string FormatMessage(string message, string playerName = "")
+    public string FormatMessage(string message, string playerName = "", string chatPrefix = "")
     {
         var validColors = new Dictionary<string, string>
         {
@@ -33,23 +33,42 @@ public class MessageColorFormatter
             { "{MAGENTA}", ChatColors.Magenta.ToString() },
         };
 
+        if (validColors.Keys.Any(color => message.StartsWith(color)))
+        {
+            message = " " + message;
+        }
+
+        if (!string.IsNullOrWhiteSpace(chatPrefix))
+        {
+            chatPrefix = ReplaceServerVariables(chatPrefix);
+            foreach (var color in validColors)
+            {
+                chatPrefix = chatPrefix.Replace(color.Key, color.Value);
+            }
+            message = message.Replace("{prefix}", chatPrefix);
+        }
+        else
+        {
+            message = message.Replace("{prefix}", "");
+            if (!validColors.Keys.Any(color => message.StartsWith(color)))
+            {
+                message = $"{ChatColors.White}{message}";
+            }
+        }
+
         foreach (var color in validColors)
         {
             message = message.Replace(color.Key, color.Value);
         }
 
-        // message = message.Replace("{playername}", playerName);
-        if (string.IsNullOrWhiteSpace(playerName))
-        {
-            message = message.Replace("{playername}", "");
-        }
-        else
+        message = ReplaceServerVariables(message);
+
+        if (!string.IsNullOrWhiteSpace(playerName))
         {
             message = message.Replace("{playername}", playerName);
         }
 
         message = message.Replace("\n", "\u2029");
-        message = ReplaceServerVariables(message);
 
         return message;
     }

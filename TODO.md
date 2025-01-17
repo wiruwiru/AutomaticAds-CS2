@@ -14,7 +14,7 @@
 | Reload Plugin                         | **Complete**   | Add command to reload plugin for easier management.                                                | Low          |
 | Common commands shortcut              | **Complete**   | Add shortcut commands like `!help` to display server commands and `!dc` to share the Discord link.  | High         |
 | Improved triggerAd functionality      | **Complete**    | Add an option for triggerAds without intervals for specific scenarios.       | Medium       |
-| {prefix} as an available variable     | In progress    | Add `{prefix}` as an available variable to improve flexibility in messages.                        | Medium       |
+| {prefix} as an available variable     | **Complete**    | Add `{prefix}` as an available variable to improve flexibility in messages.                        | Medium       |
 | Connect & disconnect messages         | Pending    | Add messages for connect/disconnect events (e.g., `PLAYER XXX (STEAMID64) connected from (COUNTRY)`). | Medium          |
 | Support for changing message method   | Pending    | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose.        | Medium       |
 | Server/Client Commands in triggerAds  | Pending    | Add support for triggerAds to execute server or client commands. | Medium       |

@@ -11,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.1.0";
+    public override string ModuleVersion => "1.1.1";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -85,9 +85,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
                     MessageColorFormatter formatter = new MessageColorFormatter();
                     string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-                    string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName);
+                    string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName, formattedPrefix);
 
-                    player.PrintToChat($"{formattedPrefix} {formattedMessage}");
+                    player.PrintToChat($"{formattedMessage}");
 
                     string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
                     if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
@@ -242,7 +242,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         }
 
         MessageColorFormatter formatter = new MessageColorFormatter();
-        string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
+
 
         foreach (var player in players.Where(p => p != null && p.IsValid && p.Connected == PlayerConnectedState.PlayerConnected && !p.IsHLTV))
         {
@@ -251,9 +251,10 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
             if (canView && !isExcluded)
             {
-                string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName);
+                string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
+                string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName, formattedPrefix);
 
-                player.PrintToChat($"{formattedPrefix} {formattedMessage}");
+                player.PrintToChat($"{formattedMessage}");
 
                 string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
                 if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
