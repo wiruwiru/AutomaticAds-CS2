@@ -15,7 +15,8 @@
 | Common commands shortcut              | **Complete**   | Add shortcut commands like `!help` to display server commands and `!dc` to share the Discord link.  | High         |
 | Improved triggerAd functionality      | **Complete**    | Add an option for triggerAds without intervals for specific scenarios.       | Medium       |
 | {prefix} as an available variable     | **Complete**    | Add `{prefix}` as an available variable to improve flexibility in messages.                        | Medium       |
-| Connect & disconnect messages         | Pending    | Add messages for connect/disconnect events (e.g., `PLAYER XXX (STEAMID64) connected from (COUNTRY)`). | Medium          |
+| Connect & disconnect messages         | **Complete**    | Add messages for connect/disconnect events. | Medium          |
+| Variable for JoinLeave         | In progress    | Add `{COUNTRY}` variable for JoinLeave messages. | High |
+| Multi-language ads                    | Pending    | Allow users to configure ad language and support ads in multiple languages.                        | Medium       |
 | Support for changing message method   | Pending    | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose.        | Medium       |
-| Server/Client Commands in triggerAds  | Pending    | Add support for triggerAds to execute server or client commands. | Medium       |
-| Multi-language ads                    | Pending    | Allow users to configure ad language and support ads in multiple languages.                        | Low       |
+| Server/Client Commands in triggerAds  | Pending    | Add support for triggerAds to execute server or client commands. | Low       |

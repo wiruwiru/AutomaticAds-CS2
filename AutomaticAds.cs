@@ -11,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.1.1";
+    public override string ModuleVersion => "1.1.2";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -44,6 +44,10 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         RegisterListener<Listeners.OnMapEnd>(() => Unload(true));
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
+
+        RegisterListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
+        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnectPre, HookMode.Pre);
 
         if (!string.IsNullOrWhiteSpace(Server.MapName))
         {
@@ -243,7 +247,6 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         MessageColorFormatter formatter = new MessageColorFormatter();
 
-
         foreach (var player in players.Where(p => p != null && p.IsValid && p.Connected == PlayerConnectedState.PlayerConnected && !p.IsHLTV))
         {
             bool canView = string.IsNullOrWhiteSpace(ad.ViewFlag) || ad.ViewFlag == "all" || AdminManager.PlayerHasPermissions(player, ad.ViewFlag);
@@ -308,6 +311,58 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         }
 
         return HookResult.Continue;
+    }
+
+    [GameEventHandler]
+    private HookResult OnPlayerDisconnectPre(EventPlayerDisconnect @event, GameEventInfo info)
+    {
+        if (!Config.EnableJoinLeaveMessages || @event == null) return HookResult.Continue;
+
+        info.DontBroadcast = true;
+
+        return HookResult.Continue;
+    }
+
+    [GameEventHandler]
+    private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+    {
+        var player = @event.Userid;
+
+        if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return HookResult.Continue;
+        var LeftPlayer = player.PlayerName;
+
+        if (Config.EnableJoinLeaveMessages && Config.JoinLeave != null && Config.JoinLeave.Any())
+        {
+            var leaveConfig = Config.JoinLeave.FirstOrDefault();
+            if (leaveConfig != null)
+            {
+                MessageColorFormatter formatter = new MessageColorFormatter();
+                string leaveMessage = formatter.FormatMessage(leaveConfig.LeaveMessage, LeftPlayer);
+                Server.PrintToChatAll(leaveMessage);
+            }
+        }
+
+        return HookResult.Continue;
+    }
+
+    [GameEventHandler]
+    private void OnClientPutInServer(int playerSlot)
+    {
+        var player = Utilities.GetPlayerFromSlot(playerSlot);
+        if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return;
+
+        var JoinPlayer = player.PlayerName;
+
+        if (Config.EnableJoinLeaveMessages && Config.JoinLeave != null && Config.JoinLeave.Any())
+        {
+            var joinConfig = Config.JoinLeave.FirstOrDefault();
+            if (joinConfig != null)
+            {
+                MessageColorFormatter formatter = new MessageColorFormatter();
+                string joinMessage = formatter.FormatMessage(joinConfig.JoinMessage, JoinPlayer);
+                Server.PrintToChatAll(joinMessage);
+            }
+        }
     }
 
     public override void Unload(bool hotReload)

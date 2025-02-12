@@ -27,8 +27,10 @@ The configuration file will be automatically generated when the plugin is first 
 | `GlobalPlaySound`      | Sound that is played when an announcement is sent in case `playSoundName` is not set in the announcement and `disableSound` is not `true`. Leave it blank to disable it.                             | **YES**  |
 | `sendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
 | `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **YES**   |
+| `JoinLeaveMessages`  | Set `true` to enable custom connection and disconnection messages. Set `false` to disable it.                        | **YES**   |
 | `WelcomeDelay`  | This is the time the plugin will wait to send the welcome message after the player connects (**Default**: 3s).                        | **YES**   |
 | `Welcome`     | Configuration for the welcome announcement. Supports variables ***(see example below)***. | **NO**   |
+| `JoinLeave`     | Configuration for connection and disconnection messages. Supports variables ***(see example below)***. | **NO**   |
 | `Ads`                | List of advertisements to be sent. Each ad can be configured individually ***(see example below)***. | **YES**  |
 
 
@@ -65,6 +67,12 @@ Here is an example configuration file:
       "viewFlag": "all",
       "excludeFlag": "",
       "disableSound": false
+    }
+  ],
+  "JoinLeave": [
+    {
+      "JoinMessage": "{BLUE}{playername} {GREEN}joined the server! {WHITE}Online: {GOLD}{players}{WHITE}/{RED}{maxplayers}.",
+      "LeaveMessage": "{BLUE}{playername} {RED}left the server!"
     }
   ],
   "Ads": [

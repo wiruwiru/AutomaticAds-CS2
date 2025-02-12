@@ -17,6 +17,9 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("UseWelcomeMessage")]
     public bool EnableWelcomeMessage { get; set; } = true;
 
+    [JsonPropertyName("JoinLeaveMessages")]
+    public bool EnableJoinLeaveMessages { get; set; } = true;
+
     [JsonPropertyName("WelcomeDelay")]
     public float WelcomeDelay { get; set; } = 3.0f;
 
@@ -29,6 +32,16 @@ public class BaseConfigs : BasePluginConfig
             ViewFlag = "all",
             ExcludeFlag = "",
             DisableSound = false
+        }
+    };
+
+    [JsonPropertyName("JoinLeave")]
+    public List<JoinLeaveConfig> JoinLeave { get; set; } = new()
+    {
+        new JoinLeaveConfig
+        {
+            JoinMessage = "{BLUE}{playername} joined the server! {RED}Online: {players}/{maxplayers}.",
+            LeaveMessage = "{BLUE}{playername} left the server!",
         }
     };
 
@@ -118,6 +131,16 @@ public class BaseConfigs : BasePluginConfig
 
         [JsonPropertyName("disableSound")]
         public bool DisableSound { get; set; } = false;
+
+    }
+
+    public class JoinLeaveConfig
+    {
+        [JsonPropertyName("JoinMessage")]
+        public string JoinMessage { get; set; } = string.Empty;
+
+        [JsonPropertyName("LeaveMessage")]
+        public string LeaveMessage { get; set; } = string.Empty;
 
     }
 }
