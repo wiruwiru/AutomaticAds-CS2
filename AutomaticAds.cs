@@ -11,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.1.2";
+    public override string ModuleVersion => "1.1.3";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -220,9 +220,13 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         }
 
         string currentMap = _currentMap;
-        if (ad.Map != "all" && ad.Map != currentMap)
+        // if (ad.Map != "all" && ad.Map != currentMap)
+        if (ad.Map != "all")
         {
-            return false;
+            if (!currentMap.StartsWith(ad.Map.Replace("*", "")))
+            {
+                return false;
+            }
         }
 
         bool isWarmup = _gGameRulesProxy != null && _gGameRulesProxy.WarmupPeriod;
@@ -271,10 +275,10 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     [GameEventHandler]
     public HookResult OnPlayerFullConnect(EventPlayerConnectFull @event, GameEventInfo info)
     {
-        if (@event.Userid is not CCSPlayerController player || player.IsBot)
+        if (@event.Userid is not CCSPlayerController player || player.IsBot || !player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected)
             return HookResult.Continue;
 
-        if (Config.EnableWelcomeMessage && player.IsValid && !player.IsBot)
+        if (Config.EnableWelcomeMessage && !player.IsBot)
         {
             foreach (var welcome in Config.Welcome)
             {
@@ -295,6 +299,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                 {
                     AddTimer(Config.WelcomeDelay, () =>
                     {
+                        if (!player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected)
+                            return;
+
                         MessageColorFormatter formatter = new MessageColorFormatter();
                         string prefix = formatter.FormatMessage(Config.ChatPrefix);
                         string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage, player.PlayerName);
@@ -330,6 +337,8 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return HookResult.Continue;
         var LeftPlayer = player.PlayerName;
+        var SteamID64 = player.SteamID.ToString();
+        var ipAddress = player.IpAddress?.Split(':')[0];
 
         if (Config.EnableJoinLeaveMessages && Config.JoinLeave != null && Config.JoinLeave.Any())
         {
@@ -338,6 +347,26 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             {
                 MessageColorFormatter formatter = new MessageColorFormatter();
                 string leaveMessage = formatter.FormatMessage(leaveConfig.LeaveMessage, LeftPlayer);
+
+                if (leaveMessage.Contains("{id64}"))
+                {
+                    leaveMessage = leaveMessage.Replace("{id64}", SteamID64);
+                }
+
+                if (leaveMessage.Contains("{country}"))
+                {
+                    if (!string.IsNullOrEmpty(ipAddress))
+                    {
+                        var query = new Query();
+                        var countryName = query.GetCountryAsync(ipAddress).Result;
+                        leaveMessage = leaveMessage.Replace("{country}", countryName ?? Localizer["Unknown"]);
+                    }
+                    else
+                    {
+                        leaveMessage = leaveMessage.Replace("{country}", Localizer["Unknown"]);
+                    }
+                }
+
                 Server.PrintToChatAll(leaveMessage);
             }
         }
@@ -352,6 +381,8 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return;
 
         var JoinPlayer = player.PlayerName;
+        var SteamID64 = player.SteamID.ToString();
+        var ipAddress = player.IpAddress?.Split(':')[0];
 
         if (Config.EnableJoinLeaveMessages && Config.JoinLeave != null && Config.JoinLeave.Any())
         {
@@ -360,6 +391,26 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             {
                 MessageColorFormatter formatter = new MessageColorFormatter();
                 string joinMessage = formatter.FormatMessage(joinConfig.JoinMessage, JoinPlayer);
+
+                if (joinMessage.Contains("{id64}"))
+                {
+                    joinMessage = joinMessage.Replace("{id64}", SteamID64);
+                }
+
+                if (joinMessage.Contains("{country}"))
+                {
+                    if (!string.IsNullOrEmpty(ipAddress))
+                    {
+                        var query = new Query();
+                        var countryName = query.GetCountryAsync(ipAddress).Result;
+                        joinMessage = joinMessage.Replace("{country}", countryName ?? Localizer["Unknown"]);
+                    }
+                    else
+                    {
+                        joinMessage = joinMessage.Replace("{country}", Localizer["Unknown"]);
+                    }
+                }
+
                 Server.PrintToChatAll(joinMessage);
             }
         }

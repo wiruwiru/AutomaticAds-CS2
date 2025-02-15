@@ -71,8 +71,8 @@ Here is an example configuration file:
   ],
   "JoinLeave": [
     {
-      "JoinMessage": "{BLUE}{playername} {GREEN}joined the server! {WHITE}Online: {GOLD}{players}{WHITE}/{RED}{maxplayers}.",
-      "LeaveMessage": "{BLUE}{playername} {RED}left the server!"
+      "JoinMessage": "{BLUE}{playername} ({id64}) {GREEN}joined the server from {country}! {WHITE}Online: {GOLD}{players}{WHITE}/{RED}{maxplayers}.",
+      "LeaveMessage": "{BLUE}{playername} ({id64}) {RED}left the server!"
     }
   ],
   "Ads": [

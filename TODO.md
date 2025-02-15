@@ -10,13 +10,13 @@
 | Option to disable sound               | **Complete**   | Add an option to disable sound for announcements.                                                  | Low          |
 | Line breaks in messages               | **Complete**   | Support for line breaks in messages ***(e.g., for displaying multiple lines of text)***.          | Low          |
 | Welcome message                       | **Complete**   | Configure a welcome message sent when a player connects to the server **(OnPlayerConnectFull event)**. | Low         |
-| PlayerName variable                   | **Complete**   | Add the `{PlayerName}` variable to personalize advertisements by including the player's name.       | Low          |
+| PlayerName variable                   | **Complete**   | Add the `{playername}` variable to personalize advertisements by including the player's name.       | Low          |
 | Reload Plugin                         | **Complete**   | Add command to reload plugin for easier management.                                                | Low          |
 | Common commands shortcut              | **Complete**   | Add shortcut commands like `!help` to display server commands and `!dc` to share the Discord link.  | High         |
 | Improved triggerAd functionality      | **Complete**    | Add an option for triggerAds without intervals for specific scenarios.       | Medium       |
 | {prefix} as an available variable     | **Complete**    | Add `{prefix}` as an available variable to improve flexibility in messages.                        | Medium       |
 | Connect & disconnect messages         | **Complete**    | Add messages for connect/disconnect events. | Medium          |
-| Variable for JoinLeave         | In progress    | Add `{COUNTRY}` variable for JoinLeave messages. | High |
+| Variable for JoinLeave         | **Complete**    | Add `{country}` and `{id64}` variables for JoinLeave messages. | High |
 | Multi-language ads                    | Pending    | Allow users to configure ad language and support ads in multiple languages.                        | Medium       |
 | Support for changing message method   | Pending    | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose.        | Medium       |
 | Server/Client Commands in triggerAds  | Pending    | Add support for triggerAds to execute server or client commands. | Low       |

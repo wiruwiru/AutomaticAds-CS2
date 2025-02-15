@@ -1,5 +1,6 @@
 {
   "NoPermissions": "No tienes permiso para ejecutar este comando.",
   "Reloaded": "El plugin ha sido recargado.",
-  "FailedToReload": "No se pudo recargar el plugin."
+  "FailedToReload": "No se pudo recargar el plugin.",
+  "Unknown": "Desconocido"
 }
