@@ -11,7 +11,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.1.3";
+    public override string ModuleVersion => "1.1.3b";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -275,7 +275,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     [GameEventHandler]
     public HookResult OnPlayerFullConnect(EventPlayerConnectFull @event, GameEventInfo info)
     {
-        if (@event.Userid is not CCSPlayerController player || player.IsBot || !player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected)
+        if (@event.Userid is not CCSPlayerController player || player == null || !player.IsValid || player.IsBot || player.Connected != PlayerConnectedState.PlayerConnected)
             return HookResult.Continue;
 
         if (Config.EnableWelcomeMessage && !player.IsBot)
@@ -299,7 +299,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                 {
                     AddTimer(Config.WelcomeDelay, () =>
                     {
-                        if (!player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected)
+                        if (player == null || !player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected)
                             return;
 
                         MessageColorFormatter formatter = new MessageColorFormatter();

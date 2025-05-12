@@ -21,7 +21,7 @@ public class BaseConfigs : BasePluginConfig
     public bool EnableJoinLeaveMessages { get; set; } = true;
 
     [JsonPropertyName("WelcomeDelay")]
-    public float WelcomeDelay { get; set; } = 3.0f;
+    public float WelcomeDelay { get; set; } = 5.0f;
 
     [JsonPropertyName("Welcome")]
     public List<WelcomeConfig> Welcome { get; set; } = new()
