@@ -297,6 +297,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
                 if (canView && !isExcluded)
                 {
+                    string? playerName = player.PlayerName;
                     AddTimer(Config.WelcomeDelay, () =>
                     {
                         if (player == null || !player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected)
@@ -304,7 +305,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
                         MessageColorFormatter formatter = new MessageColorFormatter();
                         string prefix = formatter.FormatMessage(Config.ChatPrefix);
-                        string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage, player.PlayerName);
+                        string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage, playerName);
 
                         player.PrintToChat($"{prefix} {welcomeMessage}");
 
