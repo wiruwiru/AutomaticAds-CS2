@@ -183,6 +183,15 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         return HookResult.Continue;
     }
 
+    private void OnClientPutInServer(int playerSlot)
+    {
+        var player = Utilities.GetPlayerFromSlot(playerSlot);
+        if (!player.IsValidPlayer())
+            return;
+
+        _joinLeaveService?.HandlePlayerJoin(player!);
+    }
+
     [GameEventHandler]
     private HookResult OnPlayerDisconnectPre(EventPlayerDisconnect @event, GameEventInfo info)
     {
@@ -208,13 +217,15 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         return HookResult.Continue;
     }
 
-    private void OnClientPutInServer(int playerSlot)
+    [GameEventHandler(HookMode.Pre)]
+    public HookResult OnPlayerDeath(EventPlayerDeath gameEvent, GameEventInfo info)
     {
-        var player = Utilities.GetPlayerFromSlot(playerSlot);
+        var player = gameEvent.Userid;
         if (!player.IsValidPlayer())
-            return;
+            return HookResult.Continue;
 
-        _joinLeaveService?.HandlePlayerJoin(player!);
+        _adService?.SendOnDeadAds(player);
+        return HookResult.Continue;
     }
 
     public override void Unload(bool hotReload)

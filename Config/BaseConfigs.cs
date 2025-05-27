@@ -108,6 +108,12 @@ public class BaseConfigs : BasePluginConfig
         [JsonPropertyName("onlyInWarmup")]
         public bool OnlyInWarmup { get; set; } = false;
 
+        [JsonPropertyName("onlySpec")]
+        public bool onlySpec { get; set; } = false;
+
+        [JsonPropertyName("onDead")]
+        public bool onDead { get; set; } = false;
+
         [JsonPropertyName("triggerAd")]
         public List<string>? TriggerAd { get; set; } = new();
 
