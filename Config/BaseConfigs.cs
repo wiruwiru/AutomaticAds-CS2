@@ -1,7 +1,7 @@
 using CounterStrikeSharp.API.Core;
 using System.Text.Json.Serialization;
 
-namespace AutomaticAds;
+namespace AutomaticAds.Config;
 
 public class BaseConfigs : BasePluginConfig
 {
@@ -80,7 +80,7 @@ public class BaseConfigs : BasePluginConfig
             Interval = 1400,
             DisableSound = true,
             ViewFlag = "all",
-            triggerAd = ["map", "currentmap"],
+            TriggerAd = ["map", "currentmap"],
             PlaySoundName = "sound/ui/beep22.wav"
         }
     };
@@ -109,10 +109,10 @@ public class BaseConfigs : BasePluginConfig
         public bool OnlyInWarmup { get; set; } = false;
 
         [JsonPropertyName("triggerAd")]
-        public List<string>? triggerAd { get; set; } = new();
+        public List<string>? TriggerAd { get; set; } = new();
 
         [JsonPropertyName("Disableinterval")]
-        public bool Disableinterval { get; set; } = false;
+        public bool DisableInterval { get; set; } = false;
 
         [JsonPropertyName("playSoundName")]
         public string? PlaySoundName { get; set; } = null;
@@ -131,7 +131,6 @@ public class BaseConfigs : BasePluginConfig
 
         [JsonPropertyName("disableSound")]
         public bool DisableSound { get; set; } = false;
-
     }
 
     public class JoinLeaveConfig
@@ -141,6 +140,5 @@ public class BaseConfigs : BasePluginConfig
 
         [JsonPropertyName("LeaveMessage")]
         public string LeaveMessage { get; set; } = string.Empty;
-
     }
 }

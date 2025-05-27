@@ -1,9 +1,12 @@
-﻿using CounterStrikeSharp.API;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
-using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
+using AutomaticAds.Config;
+using AutomaticAds.Services;
+using AutomaticAds.Managers;
+using AutomaticAds.Utils;
 
 namespace AutomaticAds;
 
@@ -11,312 +14,171 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.1.3b";
+    public override string ModuleVersion => "1.2.0";
     public override string ModuleAuthor => "luca.uy";
-    public override string ModuleDescription => "I send automatic messages to the chat and play a sound alert for users to see the message.";
+    public override string ModuleDescription => "Send automatic messages to the chat and play a sound alert for users to see the message.";
 
-    private readonly Dictionary<BaseConfigs.AdConfig, DateTime> lastAdTimes = new();
-    private readonly List<CounterStrikeSharp.API.Modules.Timers.Timer> timers = new();
-    private CounterStrikeSharp.API.Modules.Timers.Timer? adTimer = null;
+    // Services and Managers
+    private AdService? _adService;
+    private WelcomeService? _welcomeService;
+    private JoinLeaveService? _joinLeaveService;
+    private IIPQueryService? _ipQueryService;
+    private TimerManager? _timerManager;
+    private PlayerManager? _playerManager;
+    private MessageFormatter? _messageFormatter;
 
-    private int currentAdIndex = 0;
-    private string _currentMap = "";
-    private CCSGameRules? _gGameRulesProxy;
+    // Game state
+    private string _currentMap = string.Empty;
+    private CCSGameRules? _gameRulesProxy;
+
+    public required BaseConfigs Config { get; set; }
 
     public override void Load(bool hotReload)
     {
-
-        RegisterListener<Listeners.OnMapStart>(mapName =>
-        {
-            _currentMap = mapName;
-
-            Server.NextFrame(() =>
-            {
-                _gGameRulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules")
-                .First().GameRules ?? throw new Exception("Failed to find game rules proxy entity.");
-            });
-        });
+        InitializeServices();
+        RegisterEventHandlers();
+        RegisterCommands();
 
         if (hotReload)
         {
             _currentMap = Server.MapName;
+            _adService?.SetCurrentMap(_currentMap);
         }
-
-        RegisterListener<Listeners.OnMapEnd>(() => Unload(true));
-        RegisterListener<Listeners.OnMapStart>(OnMapStart);
-
-        RegisterListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
-        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
-        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnectPre, HookMode.Pre);
 
         if (!string.IsNullOrWhiteSpace(Server.MapName))
         {
             OnMapStart(Server.MapName);
         }
+    }
 
+    public void OnConfigParsed(BaseConfigs config)
+    {
+        ConfigValidator.ValidateConfig(config);
+        Config = config;
+    }
+
+    private void InitializeServices()
+    {
+        _messageFormatter = new MessageFormatter();
+        _timerManager = new TimerManager(this);
+        _playerManager = new PlayerManager();
+        _ipQueryService = new IPQueryService();
+
+        _adService = new AdService(Config, _messageFormatter, _timerManager, _playerManager);
+        _welcomeService = new WelcomeService(Config, _messageFormatter, _timerManager, _playerManager);
+        _joinLeaveService = new JoinLeaveService(Config, _messageFormatter, _playerManager, _ipQueryService, _timerManager);
+    }
+
+    private void RegisterEventHandlers()
+    {
+        RegisterListener<Listeners.OnMapStart>(mapName =>
+        {
+            _currentMap = mapName;
+            _adService?.SetCurrentMap(mapName);
+
+            Server.NextFrame(() =>
+            {
+                _gameRulesProxy = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules")
+                    .FirstOrDefault()?.GameRules;
+                _adService?.SetGameRules(_gameRulesProxy);
+            });
+        });
+
+        RegisterListener<Listeners.OnMapEnd>(() => Unload(true));
+        RegisterListener<Listeners.OnMapStart>(OnMapStart);
+        RegisterListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
+
+        RegisterEventHandler<EventPlayerConnectFull>(OnPlayerFullConnect);
+        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnectPre, HookMode.Pre);
+    }
+
+    private void RegisterCommands()
+    {
+        RegisterReloadCommand();
+        RegisterTriggerCommands();
+    }
+
+    private void RegisterReloadCommand()
+    {
         AddCommand("ads_reload", "Reloads the AutomaticAds plugin configuration.", (player, commandInfo) =>
         {
+            if (player == null || commandInfo == null)
+                return;
 
-            if (player == null || commandInfo == null) return;
-            MessageColorFormatter formatter = new MessageColorFormatter();
-            string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-
-            var permissionValidator = new RequiresPermissions("@css/root");
-            if (!permissionValidator.CanExecuteCommand(player))
+            if (!HasReloadPermission(player))
             {
-                player.PrintToChat($"{formattedPrefix} {Localizer["NoPermissions"]}");
+                SendNoPermissionMessage(player);
                 return;
             }
 
             try
             {
                 Server.ExecuteCommand("css_plugins reload AutomaticAds");
+                string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
                 commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Reloaded"]}");
             }
             catch (Exception ex)
             {
+                string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
                 commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["FailedToReload"]}: {ex.Message}");
             }
         });
-
-        foreach (var ad in Config.Ads.Where(ad => ad.triggerAd != null && ad.triggerAd.Any()))
-        {
-            foreach (var command in ad.triggerAd!)
-            {
-                AddCommand(command, $"Sends the advertisement '{command}' to the user using the command.", (player, commandInfo) =>
-                {
-                    if (player == null) return;
-
-                    MessageColorFormatter formatter = new MessageColorFormatter();
-                    string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-                    string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName, formattedPrefix);
-
-                    player.PrintToChat($"{formattedMessage}");
-
-                    string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
-                    if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
-                    {
-                        player.ExecuteClientCommand($"play {soundToPlay}");
-                    }
-                });
-            }
-        }
-
     }
 
-    public required BaseConfigs Config { get; set; }
-
-    public void OnConfigParsed(BaseConfigs config)
+    private void RegisterTriggerCommands()
     {
-        ValidateConfig(config);
-        Config = config;
-
-        foreach (var ad in Config.Ads)
+        foreach (var ad in Config.Ads.Where(ad => ad.TriggerAd?.Any() == true))
         {
-            if (!lastAdTimes.ContainsKey(ad))
+            foreach (var command in ad.TriggerAd!)
             {
-                lastAdTimes[ad] = DateTime.MinValue;
+                AddCommand(command, $"Sends the advertisement '{command}' to the user using the command.",
+                    (player, commandInfo) => HandleTriggerCommand(player, ad));
             }
         }
     }
 
-    private void ValidateConfig(BaseConfigs config)
+    private void HandleTriggerCommand(CCSPlayerController? player, BaseConfigs.AdConfig ad)
     {
-        foreach (var ad in config.Ads)
+        if (!player.IsValidPlayer())
+            return;
+
+        string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
+        string formattedMessage = _messageFormatter.FormatMessage(ad.Message, player!.PlayerName, formattedPrefix);
+
+        _playerManager!.SendMessageToPlayer(player, formattedMessage);
+
+        string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
+        if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
         {
-            if (ad.Interval > 3600)
-            {
-                ad.Interval = 3600;
-            }
-
-            if (ad.Interval < 10)
-            {
-                ad.Interval = 10;
-            }
-
-            if (ad.triggerAd != null)
-            {
-                ad.triggerAd = ad.triggerAd.Distinct().ToList();
-            }
+            _playerManager.PlaySoundToPlayer(player, soundToPlay);
         }
+    }
 
-        if (config.ChatPrefix.Length > 80)
-        {
-            config.ChatPrefix = "[AutomaticAds]";
-        }
+    private bool HasReloadPermission(CCSPlayerController player)
+    {
+        var permissionValidator = new RequiresPermissions(Utils.Constants.RootPermission);
+        return permissionValidator.CanExecuteCommand(player);
+    }
 
-        if (string.IsNullOrWhiteSpace(config.GlobalPlaySound))
-        {
-            config.GlobalPlaySound = "";
-        }
+    private void SendNoPermissionMessage(CCSPlayerController player)
+    {
+        string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
+        _playerManager!.SendMessageToPlayer(player, $"{formattedPrefix} {Localizer["NoPermissions"]}");
     }
 
     private void OnMapStart(string mapName)
     {
-        SendMessages();
-    }
-
-    public void SendMessages()
-    {
-        if (Config.SendAdsInOrder)
-        {
-            Config.Ads = Config.Ads.Where(ad => !ad.Disableinterval).ToList();
-            ScheduleNextAd();
-        }
-        else
-        {
-            foreach (var ad in Config.Ads.Where(ad => !ad.Disableinterval))
-            {
-                var timer = AddTimer(1.00f, () =>
-                {
-                    if (CanSendAd(ad))
-                    {
-                        SendAdToPlayers(ad);
-                        lastAdTimes[ad] = DateTime.Now;
-                    }
-                }, TimerFlags.REPEAT);
-
-                timers.Add(timer);
-            }
-        }
-    }
-
-    private void ScheduleNextAd()
-    {
-        if (Config.Ads.Count == 0) return;
-
-        var currentAd = Config.Ads[currentAdIndex];
-        float interval = currentAd.Interval;
-
-        adTimer?.Kill();
-        adTimer = AddTimer(interval, () =>
-        {
-            if (CanSendAd(currentAd))
-            {
-                SendAdToPlayers(currentAd);
-                lastAdTimes[currentAd] = DateTime.Now;
-            }
-
-            currentAdIndex = (currentAdIndex + 1) % Config.Ads.Count;
-            ScheduleNextAd();
-        });
-    }
-
-    private bool CanSendAd(BaseConfigs.AdConfig ad)
-    {
-        if (ad.Disableinterval)
-        {
-            return false;
-        }
-
-        if (!lastAdTimes.ContainsKey(ad))
-        {
-            lastAdTimes[ad] = DateTime.MinValue;
-        }
-
-        if (lastAdTimes[ad] == DateTime.MinValue)
-        {
-            return true;
-        }
-
-        string currentMap = _currentMap;
-        // if (ad.Map != "all" && ad.Map != currentMap)
-        if (ad.Map != "all")
-        {
-            if (!currentMap.StartsWith(ad.Map.Replace("*", "")))
-            {
-                return false;
-            }
-        }
-
-        bool isWarmup = _gGameRulesProxy != null && _gGameRulesProxy.WarmupPeriod;
-        if ((ad.OnlyInWarmup && !isWarmup) || (!ad.OnlyInWarmup && isWarmup))
-        {
-            return false;
-        }
-
-        var secondsSinceLastMessage = (int)(DateTime.Now - lastAdTimes[ad]).TotalSeconds;
-
-        return secondsSinceLastMessage >= ad.Interval;
-    }
-
-    private void SendAdToPlayers(BaseConfigs.AdConfig ad)
-    {
-        var players = Utilities.GetPlayers();
-
-        if (players == null || players.Count == 0)
-        {
-            return;
-        }
-
-        MessageColorFormatter formatter = new MessageColorFormatter();
-
-        foreach (var player in players.Where(p => p != null && p.IsValid && p.Connected == PlayerConnectedState.PlayerConnected && !p.IsHLTV))
-        {
-            bool canView = string.IsNullOrWhiteSpace(ad.ViewFlag) || ad.ViewFlag == "all" || AdminManager.PlayerHasPermissions(player, ad.ViewFlag);
-            bool isExcluded = !string.IsNullOrWhiteSpace(ad.ExcludeFlag) && AdminManager.PlayerHasPermissions(player, ad.ExcludeFlag);
-
-            if (canView && !isExcluded)
-            {
-                string formattedPrefix = formatter.FormatMessage(Config.ChatPrefix);
-                string formattedMessage = formatter.FormatMessage(ad.Message, player.PlayerName, formattedPrefix);
-
-                player.PrintToChat($"{formattedMessage}");
-
-                string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
-                if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
-                {
-                    player.ExecuteClientCommand($"play {soundToPlay}");
-                }
-            }
-        }
+        _adService?.StartAdvertising();
     }
 
     [GameEventHandler]
     public HookResult OnPlayerFullConnect(EventPlayerConnectFull @event, GameEventInfo info)
     {
-        if (@event.Userid is not CCSPlayerController player || player == null || !player.IsValid || player.IsBot || player.Connected != PlayerConnectedState.PlayerConnected)
+        if (@event.Userid?.IsValidPlayer() != true)
             return HookResult.Continue;
 
-        if (Config.EnableWelcomeMessage && !player.IsBot)
-        {
-            foreach (var welcome in Config.Welcome)
-            {
-                if (string.IsNullOrWhiteSpace(welcome.ViewFlag))
-                {
-                    welcome.ViewFlag = "all";
-                }
-
-                if (string.IsNullOrWhiteSpace(welcome.ExcludeFlag))
-                {
-                    welcome.ExcludeFlag = "";
-                }
-
-                bool canView = string.IsNullOrWhiteSpace(welcome.ViewFlag) || welcome.ViewFlag == "all" || AdminManager.PlayerHasPermissions(player, welcome.ViewFlag);
-                bool isExcluded = !string.IsNullOrWhiteSpace(welcome.ExcludeFlag) && AdminManager.PlayerHasPermissions(player, welcome.ExcludeFlag);
-
-                if (canView && !isExcluded)
-                {
-                    string? playerName = player.PlayerName;
-                    AddTimer(Config.WelcomeDelay, () =>
-                    {
-                        if (player == null || !player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected)
-                            return;
-
-                        MessageColorFormatter formatter = new MessageColorFormatter();
-                        string prefix = formatter.FormatMessage(Config.ChatPrefix);
-                        string welcomeMessage = formatter.FormatMessage(welcome.WelcomeMessage, playerName);
-
-                        player.PrintToChat($"{prefix} {welcomeMessage}");
-
-                        if (!welcome.DisableSound && !string.IsNullOrWhiteSpace(Config.GlobalPlaySound))
-                        {
-                            player.ExecuteClientCommand($"play {Config.GlobalPlaySound}");
-                        }
-                    });
-                }
-            }
-        }
+        _welcomeService?.SendWelcomeMessage(@event.Userid);
 
         return HookResult.Continue;
     }
@@ -324,10 +186,10 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     [GameEventHandler]
     private HookResult OnPlayerDisconnectPre(EventPlayerDisconnect @event, GameEventInfo info)
     {
-        if (!Config.EnableJoinLeaveMessages || @event == null) return HookResult.Continue;
+        if (!Config.EnableJoinLeaveMessages || @event == null)
+            return HookResult.Continue;
 
         info.DontBroadcast = true;
-
         return HookResult.Continue;
     }
 
@@ -335,95 +197,28 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     private HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
     {
         var player = @event.Userid;
+        if (!player.IsValidPlayer())
+            return HookResult.Continue;
 
-        if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return HookResult.Continue;
-        var LeftPlayer = player.PlayerName;
-        var SteamID64 = player.SteamID.ToString();
-        var ipAddress = player.IpAddress?.Split(':')[0];
+        _joinLeaveService?.HandlePlayerLeave(player!);
 
-        if (Config.EnableJoinLeaveMessages && Config.JoinLeave != null && Config.JoinLeave.Any())
-        {
-            var leaveConfig = Config.JoinLeave.FirstOrDefault();
-            if (leaveConfig != null)
-            {
-                MessageColorFormatter formatter = new MessageColorFormatter();
-                string leaveMessage = formatter.FormatMessage(leaveConfig.LeaveMessage, LeftPlayer);
-
-                if (leaveMessage.Contains("{id64}"))
-                {
-                    leaveMessage = leaveMessage.Replace("{id64}", SteamID64);
-                }
-
-                if (leaveMessage.Contains("{country}"))
-                {
-                    if (!string.IsNullOrEmpty(ipAddress))
-                    {
-                        var query = new Query();
-                        var countryName = query.GetCountryAsync(ipAddress).Result;
-                        leaveMessage = leaveMessage.Replace("{country}", countryName ?? Localizer["Unknown"]);
-                    }
-                    else
-                    {
-                        leaveMessage = leaveMessage.Replace("{country}", Localizer["Unknown"]);
-                    }
-                }
-
-                Server.PrintToChatAll(leaveMessage);
-            }
-        }
+        _welcomeService?.OnPlayerDisconnect(player!);
+        _joinLeaveService?.OnPlayerDisconnect(player!);
 
         return HookResult.Continue;
     }
 
-    [GameEventHandler]
     private void OnClientPutInServer(int playerSlot)
     {
         var player = Utilities.GetPlayerFromSlot(playerSlot);
-        if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return;
+        if (!player.IsValidPlayer())
+            return;
 
-        var JoinPlayer = player.PlayerName;
-        var SteamID64 = player.SteamID.ToString();
-        var ipAddress = player.IpAddress?.Split(':')[0];
-
-        if (Config.EnableJoinLeaveMessages && Config.JoinLeave != null && Config.JoinLeave.Any())
-        {
-            var joinConfig = Config.JoinLeave.FirstOrDefault();
-            if (joinConfig != null)
-            {
-                MessageColorFormatter formatter = new MessageColorFormatter();
-                string joinMessage = formatter.FormatMessage(joinConfig.JoinMessage, JoinPlayer);
-
-                if (joinMessage.Contains("{id64}"))
-                {
-                    joinMessage = joinMessage.Replace("{id64}", SteamID64);
-                }
-
-                if (joinMessage.Contains("{country}"))
-                {
-                    if (!string.IsNullOrEmpty(ipAddress))
-                    {
-                        var query = new Query();
-                        var countryName = query.GetCountryAsync(ipAddress).Result;
-                        joinMessage = joinMessage.Replace("{country}", countryName ?? Localizer["Unknown"]);
-                    }
-                    else
-                    {
-                        joinMessage = joinMessage.Replace("{country}", Localizer["Unknown"]);
-                    }
-                }
-
-                Server.PrintToChatAll(joinMessage);
-            }
-        }
+        _joinLeaveService?.HandlePlayerJoin(player!);
     }
 
     public override void Unload(bool hotReload)
     {
-        adTimer?.Kill();
-        foreach (var timer in timers)
-        {
-            timer.Kill();
-        }
-        timers.Clear();
+        _timerManager?.KillAllTimers();
     }
 }
