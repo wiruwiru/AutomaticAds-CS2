@@ -42,6 +42,7 @@ Each item in the `Ads` list represents a single advertisement. Here are the fiel
 | Parameter       | Description                                                                                         | Required |
 |-----------------|-----------------------------------------------------------------------------------------------------|----------|
 | `message` | The message/announcement to send in the chat. Supports colors. | **YES**  |
+| `displayType` | Controls how the message is displayed. Options: `"Chat"` (default, normal chat message), `"Center"` (center screen text), `"CenterHtml"` (center screen with HTML formatting support). | **NO** |
 | `interval` | The interval **(in seconds)** between sending this ad. Must be between `10` and `3600` ***(if you don't add it to the announce configuration it will be set to `600` by default)***. | **NO** |
 | `viewFlag` | Flag required to view the message. Set it to `“all”` to make it available to all players ***(if you don't add it to the announce settings it will be set to `“all”` by default)***. | **NO** |
 | `excludeFlag` | Users with this flag will not see the message. Set it to `“”` so that no players are excluded ***(if you do not add it to the announce settings it will be set to `“”` by default)***. | **NO** |
@@ -105,6 +106,11 @@ Here is an example configuration file:
       "triggerAd": ["map", "currentmap"],
       "Disableinterval": true,
       "playSoundName": "sound/ui/beep22.wav"
+    },
+    {
+      "message": "<font class='fontSize-m' color='orange'>This server uses</font><br><font class='fontSize-l' style='color:red;'>AutomaticAds</font></font>",
+      "displayType": "Chat",
+      "disableSound": true,
     }
   ],
   "ConfigVersion": 1
