@@ -2,6 +2,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Cvars;
 using AutomaticAds.Models;
+using System.Text.RegularExpressions;
 
 namespace AutomaticAds.Utils;
 
@@ -78,7 +79,12 @@ public class MessageFormatter
     {
         foreach (var colorMapping in ColorMappings)
         {
-            message = message.Replace(colorMapping.Key, colorMapping.Value.ToString());
+            message = Regex.Replace(
+                message,
+                Regex.Escape(colorMapping.Key),
+                colorMapping.Value.ToString(),
+                RegexOptions.IgnoreCase
+            );
         }
         return message;
     }
@@ -136,7 +142,7 @@ public class MessageFormatter
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting server variables: {ex.Message}");
+            Console.WriteLine($"[AutomaticAds] Error getting server variables: {ex.Message}");
             return GetFallbackServerVariables();
         }
     }
