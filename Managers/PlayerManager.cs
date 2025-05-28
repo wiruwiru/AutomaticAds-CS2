@@ -1,6 +1,7 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using AutomaticAds.Models;
+using AutomaticAds.Config;
 using AutomaticAds.Utils;
 
 namespace AutomaticAds.Managers;
@@ -47,6 +48,28 @@ public class PlayerManager
         if (player.IsValidPlayer() && !string.IsNullOrWhiteSpace(message))
         {
             player.PrintToChat(message);
+        }
+    }
+
+    public void SendMessageToPlayer(CCSPlayerController player, string message, DisplayType displayType)
+    {
+        if (!player.IsValidPlayer() || string.IsNullOrWhiteSpace(message))
+            return;
+
+        switch (displayType)
+        {
+            case DisplayType.Chat:
+                player.PrintToChat(message);
+                break;
+            case DisplayType.Center:
+                player.PrintToCenterAlert(message);
+                break;
+            case DisplayType.CenterHtml:
+                player.PrintToCenterHtml(message);
+                break;
+            default:
+                player.PrintToChat(message);
+                break;
         }
     }
 }

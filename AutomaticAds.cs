@@ -145,7 +145,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
         string formattedMessage = _messageFormatter.FormatMessage(ad.Message, player!.PlayerName, formattedPrefix);
 
-        _playerManager!.SendMessageToPlayer(player, formattedMessage);
+        _playerManager!.SendMessageToPlayer(player, formattedMessage, ad.DisplayType);
 
         string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
         if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))

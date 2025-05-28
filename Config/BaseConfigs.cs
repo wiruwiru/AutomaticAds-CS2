@@ -82,6 +82,13 @@ public class BaseConfigs : BasePluginConfig
             ViewFlag = "all",
             TriggerAd = ["map", "currentmap"],
             PlaySoundName = "sound/ui/beep22.wav"
+        },
+        new AdConfig
+        {
+            Message = "<font class='fontSize-m' color='orange'>This server uses</font><br><font class='fontSize-l' style='color:red;'>AutomaticAds</font></font>",
+            ViewFlag = "@css/generic",
+            DisplayType = DisplayType.CenterHtml,
+            onDead = true
         }
     };
 
@@ -122,6 +129,9 @@ public class BaseConfigs : BasePluginConfig
 
         [JsonPropertyName("playSoundName")]
         public string? PlaySoundName { get; set; } = null;
+
+        [JsonPropertyName("displayType")]
+        public DisplayType DisplayType { get; set; } = DisplayType.Chat;
     }
 
     public class WelcomeConfig
