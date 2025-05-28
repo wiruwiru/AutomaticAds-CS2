@@ -31,6 +31,13 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     private string _currentMap = string.Empty;
     private CCSGameRules? _gameRulesProxy;
 
+    // CenterHtml message tracking and configuration
+    private const float CENTERHTML_DURATION_SECONDS = 5.0f;
+
+    private readonly Dictionary<int, DateTime> _centerHtmlStartTimes = new();
+    private readonly Dictionary<int, string> _activeCenterHtmlMessages = new();
+    private readonly Dictionary<int, DateTime> _lastCenterHtmlUpdateTimes = new();
+
     public required BaseConfigs Config { get; set; }
 
     public override void Load(bool hotReload)
@@ -61,7 +68,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     {
         _messageFormatter = new MessageFormatter();
         _timerManager = new TimerManager(this);
-        _playerManager = new PlayerManager();
+        _playerManager = new PlayerManager(this);
         _ipQueryService = new IPQueryService();
 
         _adService = new AdService(Config, _messageFormatter, _timerManager, _playerManager);
@@ -86,6 +93,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         RegisterListener<Listeners.OnMapEnd>(() => Unload(true));
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
+        RegisterListener<Listeners.OnTick>(OnTick);
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerFullConnect);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
@@ -171,6 +179,76 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         _adService?.StartAdvertising();
     }
 
+    private void OnTick()
+    {
+        var currentTime = DateTime.Now;
+        var playersToRemove = new List<int>();
+
+        foreach (var player in Utilities.GetPlayers())
+        {
+            if (!player.IsValid || player.IsBot || !player.UserId.HasValue)
+            {
+                continue;
+            }
+
+            int playerId = player.UserId.Value;
+
+            if (_activeCenterHtmlMessages.ContainsKey(playerId) && _centerHtmlStartTimes.ContainsKey(playerId))
+            {
+                var startTime = _centerHtmlStartTimes[playerId];
+                var elapsedTime = (currentTime - startTime).TotalSeconds;
+
+                if (elapsedTime >= CENTERHTML_DURATION_SECONDS)
+                {
+                    playersToRemove.Add(playerId);
+                    continue;
+                }
+
+                if (!_lastCenterHtmlUpdateTimes.ContainsKey(playerId) ||
+                    (currentTime - _lastCenterHtmlUpdateTimes[playerId]).TotalMilliseconds >= 40)
+                {
+                    string message = _activeCenterHtmlMessages[playerId];
+                    player.PrintToCenterHtml(message);
+                    _lastCenterHtmlUpdateTimes[playerId] = currentTime;
+                }
+            }
+        }
+
+        foreach (int playerId in playersToRemove)
+        {
+            _activeCenterHtmlMessages.Remove(playerId);
+            _centerHtmlStartTimes.Remove(playerId);
+            _lastCenterHtmlUpdateTimes.Remove(playerId);
+        }
+    }
+
+    public void StartCenterHtmlMessage(CCSPlayerController player, string message)
+    {
+        if (!player.IsValid || !player.UserId.HasValue)
+            return;
+
+        int playerId = player.UserId.Value;
+        var currentTime = DateTime.Now;
+
+        _activeCenterHtmlMessages[playerId] = message;
+        _centerHtmlStartTimes[playerId] = currentTime;
+        _lastCenterHtmlUpdateTimes[playerId] = currentTime;
+
+        player.PrintToCenterHtml(message);
+    }
+
+    public void StopCenterHtmlMessage(CCSPlayerController player)
+    {
+        if (!player.IsValid || !player.UserId.HasValue)
+            return;
+
+        int playerId = player.UserId.Value;
+
+        _activeCenterHtmlMessages.Remove(playerId);
+        _centerHtmlStartTimes.Remove(playerId);
+        _lastCenterHtmlUpdateTimes.Remove(playerId);
+    }
+
     [GameEventHandler]
     public HookResult OnPlayerFullConnect(EventPlayerConnectFull @event, GameEventInfo info)
     {
@@ -200,8 +278,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         if (!player.IsValidPlayer())
             return HookResult.Continue;
 
-        _joinLeaveService?.HandlePlayerLeave(player!);
+        StopCenterHtmlMessage(player!);
 
+        _joinLeaveService?.HandlePlayerLeave(player!);
         _welcomeService?.OnPlayerDisconnect(player!);
         _joinLeaveService?.OnPlayerDisconnect(player!);
 
@@ -222,5 +301,6 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     public override void Unload(bool hotReload)
     {
         _timerManager?.KillAllTimers();
+        RemoveListener<Listeners.OnTick>(OnTick);
     }
 }

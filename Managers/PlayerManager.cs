@@ -8,6 +8,13 @@ namespace AutomaticAds.Managers;
 
 public class PlayerManager
 {
+    private readonly AutomaticAdsBase? _plugin;
+
+    public PlayerManager(AutomaticAdsBase? plugin = null)
+    {
+        _plugin = plugin;
+    }
+
     public List<CCSPlayerController> GetValidPlayers()
     {
         return Utilities.GetPlayers().GetValidPlayers();
@@ -65,7 +72,7 @@ public class PlayerManager
                 player.PrintToCenterAlert(message);
                 break;
             case DisplayType.CenterHtml:
-                player.PrintToCenterHtml(message);
+                _plugin?.StartCenterHtmlMessage(player, message);
                 break;
             default:
                 player.PrintToChat(message);
