@@ -1,7 +1,7 @@
 using CounterStrikeSharp.API.Core;
 using System.Text.Json.Serialization;
 
-namespace AutomaticAds;
+namespace AutomaticAds.Config;
 
 public class BaseConfigs : BasePluginConfig
 {
@@ -80,8 +80,15 @@ public class BaseConfigs : BasePluginConfig
             Interval = 1400,
             DisableSound = true,
             ViewFlag = "all",
-            triggerAd = ["map", "currentmap"],
+            TriggerAd = ["map", "currentmap"],
             PlaySoundName = "sound/ui/beep22.wav"
+        },
+        new AdConfig
+        {
+            Message = "<font class='fontSize-m' color='orange'>This server uses</font><br><font class='fontSize-l' style='color:red;'>AutomaticAds</font></font>",
+            ViewFlag = "@css/generic",
+            DisplayType = DisplayType.CenterHtml,
+            onDead = true
         }
     };
 
@@ -108,14 +115,23 @@ public class BaseConfigs : BasePluginConfig
         [JsonPropertyName("onlyInWarmup")]
         public bool OnlyInWarmup { get; set; } = false;
 
+        [JsonPropertyName("onlySpec")]
+        public bool onlySpec { get; set; } = false;
+
+        [JsonPropertyName("onDead")]
+        public bool onDead { get; set; } = false;
+
         [JsonPropertyName("triggerAd")]
-        public List<string>? triggerAd { get; set; } = new();
+        public List<string>? TriggerAd { get; set; } = new();
 
         [JsonPropertyName("Disableinterval")]
-        public bool Disableinterval { get; set; } = false;
+        public bool DisableInterval { get; set; } = false;
 
         [JsonPropertyName("playSoundName")]
         public string? PlaySoundName { get; set; } = null;
+
+        [JsonPropertyName("displayType")]
+        public DisplayType DisplayType { get; set; } = DisplayType.Chat;
     }
 
     public class WelcomeConfig
@@ -131,7 +147,6 @@ public class BaseConfigs : BasePluginConfig
 
         [JsonPropertyName("disableSound")]
         public bool DisableSound { get; set; } = false;
-
     }
 
     public class JoinLeaveConfig
@@ -141,6 +156,5 @@ public class BaseConfigs : BasePluginConfig
 
         [JsonPropertyName("LeaveMessage")]
         public string LeaveMessage { get; set; } = string.Empty;
-
     }
 }

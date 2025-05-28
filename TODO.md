@@ -17,6 +17,6 @@
 | {prefix} as an available variable     | **Complete**    | Add `{prefix}` as an available variable to improve flexibility in messages.                        | Medium       |
 | Connect & disconnect messages         | **Complete**    | Add messages for connect/disconnect events. | Medium          |
 | Variable for JoinLeave         | **Complete**    | Add `{country}` and `{id64}` variables for JoinLeave messages. | High |
+| Support for changing message method   | **Complete**    | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose.        | High       |
+| Server/Client Commands in triggerAds  | Pending    | Add support for triggerAds to execute server or client commands. | Medium       |
 | Multi-language ads                    | Pending    | Allow users to configure ad language and support ads in multiple languages.                        | Medium       |
-| Support for changing message method   | Pending    | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose.        | Medium       |
-| Server/Client Commands in triggerAds  | Pending    | Add support for triggerAds to execute server or client commands. | Low       |
