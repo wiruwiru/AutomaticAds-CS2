@@ -86,7 +86,6 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         RegisterListener<Listeners.OnMapEnd>(() => Unload(true));
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
-        RegisterListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerFullConnect);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
@@ -178,18 +177,10 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         if (@event.Userid?.IsValidPlayer() != true)
             return HookResult.Continue;
 
+        _joinLeaveService?.HandlePlayerJoin(@event.Userid);
         _welcomeService?.SendWelcomeMessage(@event.Userid);
 
         return HookResult.Continue;
-    }
-
-    private void OnClientPutInServer(int playerSlot)
-    {
-        var player = Utilities.GetPlayerFromSlot(playerSlot);
-        if (!player.IsValidPlayer())
-            return;
-
-        _joinLeaveService?.HandlePlayerJoin(player!);
     }
 
     [GameEventHandler]

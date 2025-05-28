@@ -28,18 +28,31 @@ public class JoinLeaveService
 
     public async void HandlePlayerJoin(CCSPlayerController player)
     {
+        if (!_config.EnableJoinLeaveMessages)
+            return;
+
         if (!ShouldProcessJoinLeaveMessage(player))
             return;
 
-        if (_processedJoins.Contains(player.SteamID))
+        ulong steamId;
+        try
+        {
+            steamId = player.SteamID;
+        }
+        catch
+        {
+            return;
+        }
+
+        if (_processedJoins.Contains(steamId))
             return;
 
-        _processedJoins.Add(player.SteamID);
+        _processedJoins.Add(steamId);
 
         var joinConfig = _config.JoinLeave.FirstOrDefault();
         if (joinConfig == null)
         {
-            _processedJoins.Remove(player.SteamID);
+            _processedJoins.Remove(steamId);
             return;
         }
 
@@ -49,37 +62,59 @@ public class JoinLeaveService
 
             Server.NextFrame(() =>
             {
-                if (player.IsValidPlayer())
+                try
                 {
-                    string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
-                    string joinMessage = _messageFormatter.FormatMessageWithPlayerInfo(joinConfig.JoinMessage, playerInfo, formattedPrefix);
-                    Server.PrintToChatAll(joinMessage);
+                    if (player.IsValidPlayer())
+                    {
+                        string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
+                        string joinMessage = _messageFormatter.FormatMessageWithPlayerInfo(joinConfig.JoinMessage, playerInfo, formattedPrefix);
+                        Server.PrintToChatAll(joinMessage);
+                    }
                 }
-
-                _timerManager.AddTimer(5.0f, () => _processedJoins.Remove(player.SteamID));
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AutomaticAds] Error formatting join message: {ex.Message}");
+                }
+                finally
+                {
+                    _timerManager.AddTimer(5.0f, () => _processedJoins.Remove(steamId));
+                }
             });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in HandlePlayerJoin: {ex.Message}");
-            _processedJoins.Remove(player.SteamID);
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerJoin: {ex.Message}");
+            _processedJoins.Remove(steamId);
         }
     }
 
     public async void HandlePlayerLeave(CCSPlayerController player)
     {
+        if (!_config.EnableJoinLeaveMessages)
+            return;
+
         if (!ShouldProcessJoinLeaveMessage(player))
             return;
 
-        if (_processedLeaves.Contains(player.SteamID))
+        ulong steamId;
+        try
+        {
+            steamId = player.SteamID;
+        }
+        catch
+        {
+            return;
+        }
+
+        if (_processedLeaves.Contains(steamId))
             return;
 
-        _processedLeaves.Add(player.SteamID);
+        _processedLeaves.Add(steamId);
 
         var leaveConfig = _config.JoinLeave.FirstOrDefault();
         if (leaveConfig == null)
         {
-            _processedLeaves.Remove(player.SteamID);
+            _processedLeaves.Remove(steamId);
             return;
         }
 
@@ -89,17 +124,26 @@ public class JoinLeaveService
 
             Server.NextFrame(() =>
             {
-                string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
-                string leaveMessage = _messageFormatter.FormatMessageWithPlayerInfo(leaveConfig.LeaveMessage, playerInfo, formattedPrefix);
-                Server.PrintToChatAll(leaveMessage);
-
-                _processedLeaves.Remove(player.SteamID);
+                try
+                {
+                    string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
+                    string leaveMessage = _messageFormatter.FormatMessageWithPlayerInfo(leaveConfig.LeaveMessage, playerInfo, formattedPrefix);
+                    Server.PrintToChatAll(leaveMessage);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AutomaticAds] Error formatting leave message: {ex.Message}");
+                }
+                finally
+                {
+                    _processedLeaves.Remove(steamId);
+                }
             });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in HandlePlayerLeave: {ex.Message}");
-            _processedLeaves.Remove(player.SteamID);
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerLeave: {ex.Message}");
+            _processedLeaves.Remove(steamId);
         }
     }
 
@@ -107,15 +151,21 @@ public class JoinLeaveService
     {
         if (player?.IsValid == true)
         {
-            _processedJoins.Remove(player.SteamID);
-            _processedLeaves.Remove(player.SteamID);
+            try
+            {
+                ulong steamId = player.SteamID;
+                _processedJoins.Remove(steamId);
+                _processedLeaves.Remove(steamId);
+            }
+            catch
+            {
+                Console.WriteLine("[AutomaticAds] Error processing player disconnect: Player object is invalid.");
+            }
         }
     }
 
     private bool ShouldProcessJoinLeaveMessage(CCSPlayerController player)
     {
-        return _config.EnableJoinLeaveMessages &&
-               _config.JoinLeave.Any() &&
-               player.IsValidPlayer();
+        return _config.JoinLeave.Any() && player.IsValidPlayer();
     }
 }

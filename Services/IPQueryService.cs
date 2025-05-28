@@ -71,6 +71,6 @@ public class IPQueryService : IIPQueryService
 
     private static void LogError(string message)
     {
-        Console.WriteLine(message);
+        Console.WriteLine($"[AutomaticAds] {message}");
     }
 }
