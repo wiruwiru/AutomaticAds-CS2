@@ -66,7 +66,7 @@ Here is an example configuration file:
   "UseWelcomeMessage": true,
   "Welcome": [
     {
-      "WelcomeMessage": "{BLUE}Welcome to the server {playername}! {RED}Playing on {map} with {players}/{maxplayers} players.",
+      "WelcomeMessage": "{prefix} {BLUE}Welcome to the server {playername}! {RED}Playing on {map} with {players}/{maxplayers} players.",
       "viewFlag": "all",
       "excludeFlag": "",
       "disableSound": false
@@ -128,6 +128,7 @@ You can use the following placeholders in your announcements:
 |--------------|---------------------------------------------------------------|
 | `{prefix}`       | A dynamic variable replaced with the value of ChatPrefix in each message. Enables optional inclusion or exclusion of the prefix.                                      |
 | `{ip}`       | The server's IP address.                                      |
+| `{port}`     | The server's port.                                            |
 | `{hostname}` | The server's hostname.                                        |
 | `{map}`      | The current map being played.                                 |
 | `{time}`     | The current time in the server's timezone.                    |

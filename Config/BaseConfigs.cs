@@ -28,7 +28,7 @@ public class BaseConfigs : BasePluginConfig
     {
         new WelcomeConfig
         {
-            WelcomeMessage = "{BLUE}Welcome to the server {playername}! {RED}Playing on {map} with {players}/{maxplayers} players.",
+            WelcomeMessage = "{prefix} {BLUE}Welcome to the server {playername}! {RED}Playing on {map} with {players}/{maxplayers} players.",
             ViewFlag = "all",
             ExcludeFlag = "",
             DisableSound = false
