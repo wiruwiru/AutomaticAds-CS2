@@ -9,6 +9,7 @@ public static class ConfigValidator
         ValidateAds(config.Ads);
         ValidateChatPrefix(config);
         ValidateGlobalPlaySound(config);
+        ValidateCenterHtmlDisplayTime(config);
     }
 
     private static void ValidateAds(List<BaseConfigs.AdConfig> ads)
@@ -56,4 +57,13 @@ public static class ConfigValidator
             config.GlobalPlaySound = string.Empty;
         }
     }
+
+    private static void ValidateCenterHtmlDisplayTime(BaseConfigs config)
+    {
+        if (config.centerHtmlDisplayTime <= 0)
+        {
+            config.centerHtmlDisplayTime = 5.0f;
+        }
+    }
+
 }

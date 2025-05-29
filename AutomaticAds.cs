@@ -14,7 +14,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.2.0";
+    public override string ModuleVersion => "1.2.1";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "Send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -32,8 +32,6 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     private CCSGameRules? _gameRulesProxy;
 
     // CenterHtml message tracking and configuration
-    private const float CENTERHTML_DURATION_SECONDS = 5.0f;
-
     private readonly Dictionary<int, DateTime> _centerHtmlStartTimes = new();
     private readonly Dictionary<int, string> _activeCenterHtmlMessages = new();
     private readonly Dictionary<int, DateTime> _lastCenterHtmlUpdateTimes = new();
@@ -198,7 +196,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                 var startTime = _centerHtmlStartTimes[playerId];
                 var elapsedTime = (currentTime - startTime).TotalSeconds;
 
-                if (elapsedTime >= CENTERHTML_DURATION_SECONDS)
+                if (elapsedTime >= Config.centerHtmlDisplayTime)
                 {
                     playersToRemove.Add(playerId);
                     continue;

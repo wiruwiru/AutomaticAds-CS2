@@ -77,9 +77,9 @@ public class WelcomeService
     private void SendWelcomeToPlayer(CCSPlayerController player, BaseConfigs.WelcomeConfig welcome, string playerName)
     {
         string prefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
-        string welcomeMessage = _messageFormatter.FormatMessage(welcome.WelcomeMessage, playerName);
+        string welcomeMessage = _messageFormatter.FormatMessage(welcome.WelcomeMessage, playerName, prefix);
 
-        _playerManager.SendMessageToPlayer(player, $"{prefix} {welcomeMessage}");
+        _playerManager.SendMessageToPlayer(player, welcomeMessage);
 
         if (!welcome.DisableSound && !string.IsNullOrWhiteSpace(_config.GlobalPlaySound))
         {

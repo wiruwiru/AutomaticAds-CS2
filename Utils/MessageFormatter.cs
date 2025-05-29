@@ -122,6 +122,7 @@ public class MessageFormatter
         try
         {
             string ip = GetServerIp();
+            string port = GetServerPort();
             string hostname = GetServerHostname();
             string map = Server.MapName;
             string time = DateTime.Now.ToString("HH:mm");
@@ -132,6 +133,7 @@ public class MessageFormatter
             return new Dictionary<string, string>
             {
                 { "{ip}", ip },
+                { "{port}", port },
                 { "{hostname}", hostname },
                 { "{map}", map },
                 { "{time}", time },
@@ -160,6 +162,20 @@ public class MessageFormatter
         catch
         {
             return "Unknown:27015";
+        }
+    }
+
+    private string GetServerPort()
+    {
+        try
+        {
+            var portCvar = ConVar.Find("hostport");
+            int port = portCvar?.GetPrimitiveValue<int>() ?? 27015;
+            return port.ToString();
+        }
+        catch
+        {
+            return "27015";
         }
     }
 
@@ -192,6 +208,7 @@ public class MessageFormatter
         return new Dictionary<string, string>
         {
             { "{ip}", "Unknown:27015" },
+            { "{port}", "27015" },
             { "{hostname}", Constants.ErrorMessages.Unknown },
             { "{map}", Server.MapName ?? "Unknown" },
             { "{time}", DateTime.Now.ToString("HH:mm") },
