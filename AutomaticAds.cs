@@ -32,8 +32,6 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     private CCSGameRules? _gameRulesProxy;
 
     // CenterHtml message tracking and configuration
-    private const float CENTERHTML_DURATION_SECONDS = 5.0f;
-
     private readonly Dictionary<int, DateTime> _centerHtmlStartTimes = new();
     private readonly Dictionary<int, string> _activeCenterHtmlMessages = new();
     private readonly Dictionary<int, DateTime> _lastCenterHtmlUpdateTimes = new();
@@ -198,7 +196,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                 var startTime = _centerHtmlStartTimes[playerId];
                 var elapsedTime = (currentTime - startTime).TotalSeconds;
 
-                if (elapsedTime >= CENTERHTML_DURATION_SECONDS)
+                if (elapsedTime >= Config.centerHtmlDisplayTime)
                 {
                     playersToRemove.Add(playerId);
                     continue;
