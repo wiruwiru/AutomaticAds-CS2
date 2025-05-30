@@ -25,6 +25,7 @@ The configuration file will be automatically generated when the plugin is first 
 |----------------------|---------------------------------------------------------------------------------------------------|----------|
 | `ChatPrefix`         | The prefix displayed in the chat before each announcement. Supports colors. To use it, include `{prefix}` inside the `message` field in the ads configuration.                        | **YES**  |
 | `GlobalPlaySound`      | Sound that is played when an announcement is sent in case `playSoundName` is not set in the announcement and `disableSound` is not `true`. Leave it blank to disable it.                             | **YES**  |
+| `GlobalInterval` | Default interval (in seconds) between announcements if no individual interval is set in the ad configuration. (**Default**: 30s) | **YES**  |
 | `AdminFlag`      | The permission flag required for a player to be considered an admin in `{admincount}` and `{adminnames}`. | **YES**  |
 | `sendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
 | `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **YES**   |
@@ -66,6 +67,7 @@ Here is an example configuration file:
 {
   "ChatPrefix": " [{GREEN}AutomaticAds{WHITE}]{WHITE}",
   "GlobalPlaySound": "ui/panorama/popup_reveal_01",
+  "GlobalInterval": 30,
   "AdminFlag": "@css/generic",
   "sendAdsInOrder": true,
   "UseWelcomeMessage": true,
@@ -91,11 +93,7 @@ Here is an example configuration file:
   "Ads": [
     {
       "message": "{prefix} {RED}AutomaticAds is the best plugin!",
-      "viewFlag": "all",
       "excludeFlag": "@css/vip",
-      "map": "all",
-      "interval": 600,
-      "disableSound": false,
       "onlyInWarmup": true
     },
     {

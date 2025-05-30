@@ -7,32 +7,60 @@ public static class ConfigValidator
 {
     public static void ValidateConfig(BaseConfigs config)
     {
-        ValidateAds(config.Ads);
+        ValidateGlobalInterval(config);
+        ValidateAds(config.Ads, config.GlobalInterval);
         ValidateChatPrefix(config);
         ValidateGlobalPlaySound(config);
         ValidateCenterHtmlDisplayTime(config);
     }
 
-    private static void ValidateAds(List<AdConfig> ads)
+    private static void ValidateGlobalInterval(BaseConfigs config)
+    {
+        if (config.GlobalInterval > Constants.MaxInterval)
+        {
+            config.GlobalInterval = Constants.MaxInterval;
+        }
+
+        if (config.GlobalInterval < Constants.MinInterval)
+        {
+            config.GlobalInterval = Constants.MinInterval;
+        }
+    }
+
+    private static void ValidateAds(List<AdConfig> ads, float globalInterval)
     {
         foreach (var ad in ads)
         {
-            ValidateAdInterval(ad);
+            ValidateAdInterval(ad, globalInterval);
             ValidateTriggerAd(ad);
         }
     }
 
-    private static void ValidateAdInterval(AdConfig ad)
+    private static void ValidateAdInterval(AdConfig ad, float globalInterval)
     {
-        if (ad.Interval > Constants.MaxInterval)
+        float effectiveInterval = ad.GetEffectiveInterval(globalInterval);
+
+        if (effectiveInterval > Constants.MaxInterval)
         {
-            ad.Interval = Constants.MaxInterval;
+            if (ad.HasCustomInterval)
+            {
+                ad.IntervalRaw = Constants.MaxInterval;
+            }
+            else
+            {
+
+            }
         }
 
-        if (ad.Interval < Constants.MinInterval)
+        if (effectiveInterval < Constants.MinInterval)
         {
-            ad.Interval = Constants.MinInterval;
+            if (ad.HasCustomInterval)
+            {
+                ad.IntervalRaw = Constants.MinInterval;
+            }
         }
+
+        ad.Interval = ad.GetEffectiveInterval(globalInterval);
     }
 
     private static void ValidateTriggerAd(AdConfig ad)

@@ -6,6 +6,7 @@ namespace AutomaticAds.Config.Models;
 public class AdConfig
 {
     private JsonElement? _messageElement;
+    private float? _interval;
 
     [JsonPropertyName("message")]
     public JsonElement MessageElement
@@ -34,6 +35,13 @@ public class AdConfig
     public string Map { get; set; } = "all";
 
     [JsonPropertyName("interval")]
+    public float? IntervalRaw
+    {
+        get => _interval;
+        set => _interval = value;
+    }
+
+    [JsonIgnore]
     public float Interval { get; set; } = 30;
 
     [JsonPropertyName("disableSound")]
@@ -59,6 +67,13 @@ public class AdConfig
 
     [JsonPropertyName("displayType")]
     public DisplayType DisplayType { get; set; } = DisplayType.Chat;
+
+    public bool HasCustomInterval => _interval.HasValue;
+
+    public float GetEffectiveInterval(float globalInterval)
+    {
+        return _interval ?? globalInterval;
+    }
 
     public string GetMessage(string languageCode = "en")
     {

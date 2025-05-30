@@ -36,6 +36,7 @@ public class AdService
         _ipQueryService = ipQueryService;
         InitializeAdTimes();
         SeparateAdTypes();
+        InitializeIntervals();
     }
 
     public void SetCurrentMap(string mapName)
@@ -236,6 +237,14 @@ public class AdService
         _intervalAds = _config.Ads.Where(ad => !ad.DisableInterval && !ad.onDead && !ad.onlySpec).ToList();
         _onDeadAds = _config.Ads.Where(ad => !ad.DisableInterval && ad.onDead).ToList();
         _onlySpecAds = _config.Ads.Where(ad => !ad.DisableInterval && ad.onlySpec).ToList();
+    }
+
+    private void InitializeIntervals()
+    {
+        foreach (var ad in _config.Ads)
+        {
+            ad.Interval = ad.GetEffectiveInterval(_config.GlobalInterval);
+        }
     }
 
     private void InitializeAdTimes()
