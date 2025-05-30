@@ -1,11 +1,28 @@
 using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace AutomaticAds.Config.Models;
 
 public class AdConfig
 {
+    private JsonElement? _messageElement;
+
     [JsonPropertyName("message")]
-    public string Message { get; set; } = string.Empty;
+    public JsonElement MessageElement
+    {
+        get => _messageElement ?? new JsonElement();
+        set => _messageElement = value;
+    }
+
+    [JsonIgnore]
+    public string Message
+    {
+        get => GetMessage("en");
+        set
+        {
+            _messageElement = JsonSerializer.SerializeToElement(value);
+        }
+    }
 
     [JsonPropertyName("viewFlag")]
     public string? ViewFlag { get; set; } = "all";
@@ -42,4 +59,66 @@ public class AdConfig
 
     [JsonPropertyName("displayType")]
     public DisplayType DisplayType { get; set; } = DisplayType.Chat;
+
+    public string GetMessage(string languageCode = "en")
+    {
+        if (!_messageElement.HasValue)
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            var element = _messageElement.Value;
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+
+                if (element.TryGetProperty(languageCode, out var langMessage) && langMessage.ValueKind == JsonValueKind.String)
+                {
+                    var result = langMessage.GetString() ?? string.Empty;
+                    return result;
+                }
+
+                if (element.TryGetProperty("en", out var enMessage) && enMessage.ValueKind == JsonValueKind.String)
+                {
+                    var result = enMessage.GetString() ?? string.Empty;
+                    return result;
+                }
+
+                foreach (var prop in element.EnumerateObject())
+                {
+                    if (prop.Value.ValueKind == JsonValueKind.String)
+                    {
+                        var result = prop.Value.GetString() ?? string.Empty;
+                        return result;
+                    }
+                }
+            }
+            else if (element.ValueKind == JsonValueKind.String)
+            {
+                var result = element.GetString() ?? string.Empty;
+                return result;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error parsing message: {ex.Message}");
+        }
+
+        return string.Empty;
+    }
+
+    public bool IsMultiLanguage()
+    {
+        if (_messageElement.HasValue && _messageElement.Value.ValueKind == JsonValueKind.Object)
+        {
+            return _messageElement.Value.EnumerateObject().Any();
+        }
+        return false;
+    }
+
+    public bool HasValidMessage()
+    {
+        return !string.IsNullOrWhiteSpace(GetMessage());
+    }
 }

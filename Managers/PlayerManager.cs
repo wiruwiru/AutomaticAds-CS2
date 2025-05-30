@@ -26,7 +26,8 @@ public class PlayerManager
         {
             Name = player.PlayerName ?? string.Empty,
             SteamId = player.SteamID.ToString(),
-            IpAddress = player.GetPlayerIpAddress()
+            IpAddress = player.GetPlayerIpAddress(),
+            CountryCode = _plugin?.Config?.DefaultLanguage ?? "en"
         };
     }
 

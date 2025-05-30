@@ -5,6 +5,7 @@ using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Admin;
 using AutomaticAds.Models;
 using AutomaticAds.Config;
+using AutomaticAds.Config.Models;
 using System.Text.RegularExpressions;
 
 namespace AutomaticAds.Utils;
@@ -63,6 +64,107 @@ public class MessageFormatter
         message = FormatMessage(message, playerInfo.Name, chatPrefix);
         message = ReplacePlayerVariables(message, playerInfo);
         return message;
+    }
+
+    public string FormatAdMessage(AdConfig ad, PlayerInfo playerInfo, string chatPrefix = "")
+    {
+        try
+        {
+            string languageCode = GetPlayerLanguage(playerInfo);
+            string message = ad.GetMessage(languageCode);
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = ad.GetMessage("en");
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return string.Empty;
+            }
+
+            return FormatMessageWithPlayerInfo(message, playerInfo, chatPrefix);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error formatting ad message: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    public string FormatAdMessage(AdConfig ad, string playerName = "", string countryCode = "", string chatPrefix = "")
+    {
+        try
+        {
+            string languageCode = GetLanguageFromCountryCode(countryCode);
+
+            string message = ad.GetMessage(languageCode);
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = ad.GetMessage("en");
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return string.Empty;
+            }
+
+            return FormatMessage(message, playerName, chatPrefix);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error formatting ad message: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    private string GetPlayerLanguage(PlayerInfo playerInfo)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(playerInfo.CountryCode))
+            {
+                return _config?.DefaultLanguage ?? "en";
+            }
+
+            if (_config?.UseMultiLang == true)
+            {
+                string language = GetLanguageFromCountryCode(playerInfo.CountryCode);
+                return language;
+            }
+
+            return _config?.DefaultLanguage ?? "en";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error getting player language: {ex.Message}");
+            return "en";
+        }
+    }
+
+    private string GetLanguageFromCountryCode(string countryCode)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(countryCode))
+            {
+                string defaultLang = _config?.DefaultLanguage ?? "en";
+                return defaultLang;
+            }
+
+            string mappedLanguage = CountryMapping.GetCountryLanguage(countryCode);
+            if (string.IsNullOrEmpty(mappedLanguage))
+            {
+                string defaultLang = _config?.DefaultLanguage ?? "en";
+                return defaultLang;
+            }
+
+            return mappedLanguage;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error mapping country code to language: {ex.Message}");
+            return _config?.DefaultLanguage ?? "en";
+        }
     }
 
     private string ProcessPrefix(string message, string chatPrefix)

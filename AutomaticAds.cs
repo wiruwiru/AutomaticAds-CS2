@@ -70,7 +70,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         _playerManager = new PlayerManager(this);
         _ipQueryService = new IPQueryService();
 
-        _adService = new AdService(Config, _messageFormatter, _timerManager, _playerManager);
+        _adService = new AdService(Config, _messageFormatter, _timerManager, _playerManager, _ipQueryService);
         _welcomeService = new WelcomeService(Config, _messageFormatter, _timerManager, _playerManager);
         _joinLeaveService = new JoinLeaveService(Config, _messageFormatter, _playerManager, _ipQueryService, _timerManager);
     }
@@ -120,7 +120,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
             try
             {
-                Server.ExecuteCommand("css_plugins reload AutomaticAds");
+                Server.ExecuteCommand($"css_plugins reload {ModuleName}");
                 string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
                 commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Reloaded"]}");
             }
@@ -150,14 +150,24 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             return;
 
         string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
-        string formattedMessage = _messageFormatter.FormatMessage(ad.Message, player!.PlayerName, formattedPrefix);
+        string formattedMessage;
 
-        _playerManager!.SendMessageToPlayer(player, formattedMessage, ad.DisplayType);
+        if (Config.UseMultiLang)
+        {
+            var playerInfo = _playerManager!.CreatePlayerInfo(player!);
+            formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
+        }
+        else
+        {
+            formattedMessage = _messageFormatter.FormatAdMessage(ad, player?.PlayerName ?? "Unknown", "", formattedPrefix);
+        }
+
+        _playerManager!.SendMessageToPlayer(player!, formattedMessage, ad.DisplayType);
 
         string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
         if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
         {
-            _playerManager.PlaySoundToPlayer(player, soundToPlay);
+            _playerManager.PlaySoundToPlayer(player!, soundToPlay);
         }
     }
 

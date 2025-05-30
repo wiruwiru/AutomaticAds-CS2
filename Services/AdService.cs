@@ -15,6 +15,7 @@ public class AdService
     private readonly MessageFormatter _messageFormatter;
     private readonly TimerManager _timerManager;
     private readonly PlayerManager _playerManager;
+    private readonly IIPQueryService _ipQueryService;
     private readonly Dictionary<AdConfig, DateTime> _lastAdTimes = new();
     private int _currentAdIndex = 0;
     private int _currentSpecAdIndex = 0;
@@ -26,12 +27,13 @@ public class AdService
     private List<AdConfig> _onDeadAds = new();
     private List<AdConfig> _onlySpecAds = new();
 
-    public AdService(BaseConfigs config, MessageFormatter messageFormatter, TimerManager timerManager, PlayerManager playerManager)
+    public AdService(BaseConfigs config, MessageFormatter messageFormatter, TimerManager timerManager, PlayerManager playerManager, IIPQueryService ipQueryService)
     {
         _config = config;
         _messageFormatter = messageFormatter;
         _timerManager = timerManager;
         _playerManager = playerManager;
+        _ipQueryService = ipQueryService;
         InitializeAdTimes();
         SeparateAdTypes();
     }
@@ -87,6 +89,9 @@ public class AdService
         if (ad.DisableInterval)
             return false;
 
+        if (!ad.HasValidMessage())
+            return false;
+
         if (!_lastAdTimes.ContainsKey(ad))
         {
             _lastAdTimes[ad] = DateTime.MinValue;
@@ -103,44 +108,58 @@ public class AdService
 
     public void SendAdToPlayers(AdConfig ad)
     {
-        if (ad.onDead)
+        try
         {
-            var deadPlayers = _playerManager.GetValidPlayers()
-                .Where(p => !p.PawnIsAlive)
-                .ToList();
+            int playersReached = 0;
 
-            if (!deadPlayers.Any())
+            if (ad.onDead)
             {
-                return;
-            }
+                var deadPlayers = _playerManager.GetValidPlayers()
+                    .Where(p => !p.PawnIsAlive)
+                    .ToList();
 
-            foreach (var player in deadPlayers)
-            {
-                if (ShouldSendAdToPlayer(player, ad))
+                if (!deadPlayers.Any())
                 {
-                    SendAdToPlayer(player, ad);
+                    return;
+                }
+
+                foreach (var player in deadPlayers)
+                {
+                    if (ShouldSendAdToPlayer(player, ad))
+                    {
+                        SendAdToPlayer(player, ad);
+                        playersReached++;
+                    }
                 }
             }
-        }
-        else
-        {
-            List<CCSPlayerController> targetPlayers = _playerManager.GetValidPlayers().ToList();
-
-            if (ad.onlySpec)
+            else
             {
-                targetPlayers = targetPlayers.Where(p => p.Team == CsTeam.Spectator).ToList();
-            }
+                List<CCSPlayerController> targetPlayers = _playerManager.GetValidPlayers().ToList();
 
-            foreach (var player in targetPlayers)
-            {
-                if (ShouldSendAdToPlayer(player, ad))
+                if (ad.onlySpec)
                 {
-                    SendAdToPlayer(player, ad);
+                    targetPlayers = targetPlayers.Where(p => p.Team == CsTeam.Spectator).ToList();
+                }
+
+                foreach (var player in targetPlayers)
+                {
+                    if (ShouldSendAdToPlayer(player, ad))
+                    {
+                        SendAdToPlayer(player, ad);
+                        playersReached++;
+                    }
                 }
             }
-        }
 
-        _lastAdTimes[ad] = DateTime.Now;
+            _lastAdTimes[ad] = DateTime.Now;
+
+            string adType = ad.onDead ? "on-dead" : ad.onlySpec ? "spectator" : "interval";
+            string adPreview = GetAdPreview(ad);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error sending ad '{ad}': {ex.Message}");
+        }
     }
 
     public void SendOnDeadAds(CCSPlayerController? deadPlayer)
@@ -150,49 +169,66 @@ public class AdService
             return;
         }
 
-        var immediateOnDeadAds = _config.Ads.Where(ad => ad.onDead && ad.DisableInterval).ToList();
-
-        foreach (var ad in immediateOnDeadAds)
+        try
         {
-            if (ShouldSendAdToPlayer(deadPlayer, ad))
+            var immediateOnDeadAds = _config.Ads.Where(ad => ad.onDead && ad.DisableInterval).ToList();
+
+            foreach (var ad in immediateOnDeadAds)
             {
-                SendAdToPlayer(deadPlayer, ad);
+                if (ShouldSendAdToPlayer(deadPlayer, ad))
+                {
+                    SendAdToPlayer(deadPlayer, ad);
+                    string adPreview = GetAdPreview(ad);
+                }
+            }
+
+            var intervalOnDeadAds = _config.Ads.Where(ad => ad.onDead && !ad.DisableInterval).ToList();
+            foreach (var ad in intervalOnDeadAds)
+            {
+                if (CanSendAd(ad) && ShouldSendAdToPlayer(deadPlayer, ad))
+                {
+                    SendAdToPlayer(deadPlayer, ad);
+                    _lastAdTimes[ad] = DateTime.Now;
+                    string adPreview = GetAdPreview(ad);
+                }
             }
         }
-
-        var intervalOnDeadAds = _config.Ads.Where(ad => ad.onDead && !ad.DisableInterval).ToList();
-        foreach (var ad in intervalOnDeadAds)
+        catch (Exception ex)
         {
-            if (CanSendAd(ad) && ShouldSendAdToPlayer(deadPlayer, ad))
-            {
-                SendAdToPlayer(deadPlayer, ad);
-                _lastAdTimes[ad] = DateTime.Now;
-            }
+            Console.WriteLine($"[AutomaticAds] Error sending on-dead ads to player {deadPlayer?.PlayerName ?? "Unknown"}: {ex.Message}");
         }
     }
 
     private bool ShouldSendAdToPlayer(CCSPlayerController player, AdConfig ad)
     {
-        if (!player.CanViewMessage(ad.ViewFlag, ad.ExcludeFlag))
+        try
         {
-            return false;
-        }
-        if (ad.onlySpec && player.Team != CsTeam.Spectator)
-        {
-            return false;
-        }
+            if (!player.CanViewMessage(ad.ViewFlag, ad.ExcludeFlag))
+            {
+                return false;
+            }
+            if (ad.onlySpec && player.Team != CsTeam.Spectator)
+            {
+                return false;
+            }
 
-        if (!IsMapValid(ad))
+            if (!IsMapValid(ad))
+            {
+                return false;
+            }
+
+            if (!IsWarmupStateValid(ad))
+            {
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
         {
+            Console.WriteLine($"[AutomaticAds] Error checking if ad '{ad}' should be sent to player {player.PlayerName ?? "Unknown"}: {ex.Message}");
             return false;
         }
-
-        if (!IsWarmupStateValid(ad))
-        {
-            return false;
-        }
-
-        return true;
     }
 
     private void SeparateAdTypes()
@@ -268,6 +304,10 @@ public class AdService
         var currentAd = _intervalAds[_currentAdIndex];
         float interval = currentAd.Interval;
 
+        var nextIndex = (_currentAdIndex + 1) % _intervalAds.Count;
+        var nextAd = _intervalAds[nextIndex];
+        string nextAdPreview = GetAdPreview(nextAd);
+
         var timer = _timerManager.AddTimer(interval, () =>
         {
             if (IsMapValid(currentAd) && IsWarmupStateValid(currentAd))
@@ -289,6 +329,10 @@ public class AdService
 
         var currentSpecAd = _onlySpecAds[_currentSpecAdIndex];
         float interval = currentSpecAd.Interval;
+
+        var nextIndex = (_currentSpecAdIndex + 1) % _onlySpecAds.Count;
+        var nextSpecAd = _onlySpecAds[nextIndex];
+        string nextAdPreview = GetAdPreview(nextSpecAd);
 
         var timer = _timerManager.AddTimer(interval, () =>
         {
@@ -312,6 +356,9 @@ public class AdService
         }
 
         var currentOnDeadAd = _onDeadAds[_currentOnDeadAdIndex];
+        var nextIndex = (_currentOnDeadAdIndex + 1) % _onDeadAds.Count;
+        var nextOnDeadAd = _onDeadAds[nextIndex];
+        string nextAdPreview = GetAdPreview(nextOnDeadAd);
 
         var timer = _timerManager.AddTimer(currentOnDeadAd.Interval, () =>
         {
@@ -366,17 +413,56 @@ public class AdService
         return secondsSinceLastMessage >= ad.Interval;
     }
 
+    private string GetAdPreview(AdConfig ad)
+    {
+        string message = ad.GetMessage();
+
+        if (message.Length > 50)
+        {
+            message = message.Substring(0, 47) + "...";
+        }
+
+        return $"'{message}' (Interval: {ad.Interval}s)";
+    }
+
     private void SendAdToPlayer(CCSPlayerController player, AdConfig ad)
     {
-        string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
-        string formattedMessage = _messageFormatter.FormatMessage(ad.Message, player.PlayerName, formattedPrefix);
-
-        _playerManager.SendMessageToPlayer(player, formattedMessage, ad.DisplayType);
-
-        string soundToPlay = ad.PlaySoundName ?? _config.GlobalPlaySound ?? string.Empty;
-        if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+        try
         {
-            _playerManager.PlaySoundToPlayer(player, soundToPlay);
+            if (!ad.HasValidMessage())
+            {
+                return;
+            }
+
+            string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
+            string formattedMessage;
+
+            if (_config.UseMultiLang)
+            {
+                var playerInfo = _playerManager.CreatePlayerInfo(player);
+                formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
+            }
+            else
+            {
+                formattedMessage = _messageFormatter.FormatAdMessage(ad, player.PlayerName ?? "Unknown", "", formattedPrefix);
+            }
+
+            if (string.IsNullOrWhiteSpace(formattedMessage))
+            {
+                return;
+            }
+
+            _playerManager.SendMessageToPlayer(player, formattedMessage, ad.DisplayType);
+
+            string soundToPlay = ad.PlaySoundName ?? _config.GlobalPlaySound ?? string.Empty;
+            if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+            {
+                _playerManager.PlaySoundToPlayer(player, soundToPlay);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error sending ad to player {player.PlayerName ?? "Unknown"}: {ex.Message}");
         }
     }
 }

@@ -30,6 +30,12 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("centerHtmlDisplayTime")]
     public float centerHtmlDisplayTime { get; set; } = 5.0f;
 
+    [JsonPropertyName("useMultiLang")]
+    public bool UseMultiLang { get; set; } = true;
+
+    [JsonPropertyName("defaultLanguage")]
+    public string DefaultLanguage { get; set; } = "en";
+
     [JsonPropertyName("Welcome")]
     public List<WelcomeConfig> Welcome { get; set; } = new()
     {
