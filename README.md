@@ -25,6 +25,7 @@ The configuration file will be automatically generated when the plugin is first 
 |----------------------|---------------------------------------------------------------------------------------------------|----------|
 | `ChatPrefix`         | The prefix displayed in the chat before each announcement. Supports colors. To use it, include `{prefix}` inside the `message` field in the ads configuration.                        | **YES**  |
 | `GlobalPlaySound`      | Sound that is played when an announcement is sent in case `playSoundName` is not set in the announcement and `disableSound` is not `true`. Leave it blank to disable it.                             | **YES**  |
+| `AdminFlag`      | The permission flag required for a player to be considered an admin in `{admincount}` and `{adminnames}`. | **YES**  |
 | `sendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
 | `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **YES**   |
 | `JoinLeaveMessages`  | Set `true` to enable custom connection and disconnection messages. Set `false` to disable it.                        | **YES**   |
@@ -125,18 +126,20 @@ Here is an example configuration file:
 
 ### List of Available Variables:
 You can use the following placeholders in your announcements:
-| Variable     | Description                                                   |
-|--------------|---------------------------------------------------------------|
-| `{prefix}`       | A dynamic variable replaced with the value of ChatPrefix in each message. Enables optional inclusion or exclusion of the prefix.                                      |
-| `{ip}`       | The server's IP address.                                      |
-| `{port}`     | The server's port.                                            |
-| `{hostname}` | The server's hostname.                                        |
-| `{map}`      | The current map being played.                                 |
-| `{time}`     | The current time in the server's timezone.                    |
-| `{date}`     | The current date.                                             |
-| `{playername}`  | The name the player has on Steam                         |
-| `{players}`  | The current number of players online.                         |
-| `{maxplayers}`| The maximum number of players the server can hold.            |
+| Variable        | Description                                                   |
+|----------------|---------------------------------------------------------------|
+| `{prefix}`       | A dynamic variable replaced with the value of ChatPrefix in each message. Enables optional inclusion or exclusion of the prefix. |
+| `{ip}`           | The server's IP address.                                      |
+| `{port}`         | The server's port.                                            |
+| `{hostname}`     | The server's hostname.                                        |
+| `{map}`          | The current map being played.                                 |
+| `{time}`         | The current time in the server's timezone.                    |
+| `{date}`         | The current date.                                             |
+| `{playername}`   | The name the player has on Steam.                             |
+| `{players}`      | The current number of players online.                         |
+| `{maxplayers}`   | The maximum number of players the server can hold.            |
+| `{admincount}`   | The number of administrators currently online.                |
+| `{adminnames}`   | A comma-separated list of the names of online administrators. |
 
 ## TO-DO  
 The list of upcoming tasks and features has been moved to a dedicated file. You can find it here: [TO-DO.md](TODO.md)  
