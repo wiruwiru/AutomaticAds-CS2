@@ -3,12 +3,15 @@ using CounterStrikeSharp.API.Core;
 using AutomaticAds.Models;
 using AutomaticAds.Config;
 using AutomaticAds.Utils;
+using System.Collections.Concurrent;
 
 namespace AutomaticAds.Managers;
 
 public class PlayerManager
 {
     private readonly AutomaticAdsBase? _plugin;
+    private readonly ConcurrentDictionary<ulong, PlayerInfo> _playerInfoCache = new();
+    private readonly ConcurrentDictionary<ulong, DateTime> _cacheTimestamps = new();
 
     public PlayerManager(AutomaticAdsBase? plugin = null)
     {
@@ -18,6 +21,97 @@ public class PlayerManager
     public List<CCSPlayerController> GetValidPlayers()
     {
         return Utilities.GetPlayers().GetValidPlayers();
+    }
+
+    public PlayerInfo GetOrCreatePlayerInfo(CCSPlayerController player)
+    {
+        try
+        {
+            ulong steamId = player.SteamID;
+            if (_playerInfoCache.TryGetValue(steamId, out var cachedInfo))
+            {
+                return cachedInfo;
+            }
+
+            var basicInfo = CreatePlayerInfo(player);
+            _playerInfoCache.TryAdd(steamId, basicInfo);
+            _cacheTimestamps.TryAdd(steamId, DateTime.Now);
+
+            return basicInfo;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error getting player info from cache: {ex.Message}");
+            return CreatePlayerInfo(player);
+        }
+    }
+
+    public async Task<PlayerInfo> UpdatePlayerInfoWithCountryAsync(CCSPlayerController player, Services.IIPQueryService ipQueryService)
+    {
+        try
+        {
+            ulong steamId = player.SteamID;
+            var playerInfo = await CreatePlayerInfoWithCountryAsync(player, ipQueryService);
+
+            _playerInfoCache.AddOrUpdate(steamId, playerInfo, (key, oldValue) => playerInfo);
+            _cacheTimestamps.AddOrUpdate(steamId, DateTime.Now, (key, oldValue) => DateTime.Now);
+
+            return playerInfo;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error updating player info with country: {ex.Message}");
+            return GetOrCreatePlayerInfo(player);
+        }
+    }
+
+    public bool NeedsCountryUpdate(ulong steamId)
+    {
+        if (!_playerInfoCache.TryGetValue(steamId, out var playerInfo))
+            return true;
+
+        return string.IsNullOrEmpty(playerInfo.CountryCode) ||
+               playerInfo.CountryCode == Utils.Constants.ErrorMessages.Unknown;
+    }
+
+    public void ClearPlayerCache(CCSPlayerController player)
+    {
+        try
+        {
+            ulong steamId = player.SteamID;
+            _playerInfoCache.TryRemove(steamId, out _);
+            _cacheTimestamps.TryRemove(steamId, out _);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error clearing player cache: {ex.Message}");
+        }
+    }
+
+    public void ClearAllCache()
+    {
+        _playerInfoCache.Clear();
+        _cacheTimestamps.Clear();
+    }
+
+    public void CleanupOldCacheEntries(TimeSpan maxAge)
+    {
+        var cutoffTime = DateTime.Now - maxAge;
+        var expiredKeys = _cacheTimestamps
+            .Where(kvp => kvp.Value < cutoffTime)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var key in expiredKeys)
+        {
+            _playerInfoCache.TryRemove(key, out _);
+            _cacheTimestamps.TryRemove(key, out _);
+        }
+
+        if (expiredKeys.Count > 0)
+        {
+            Console.WriteLine($"[AutomaticAds] Cleaned up {expiredKeys.Count} expired cache entries");
+        }
     }
 
     public PlayerInfo CreatePlayerInfo(CCSPlayerController player)

@@ -289,6 +289,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         StopCenterHtmlMessage(player!);
 
+        _playerManager?.ClearPlayerCache(player!);
         _joinLeaveService?.HandlePlayerLeave(player!);
         _welcomeService?.OnPlayerDisconnect(player!);
         _joinLeaveService?.OnPlayerDisconnect(player!);

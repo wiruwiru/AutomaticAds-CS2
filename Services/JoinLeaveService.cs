@@ -58,7 +58,8 @@ public class JoinLeaveService
 
         try
         {
-            var playerInfo = await _playerManager.CreatePlayerInfoWithCountryAsync(player, _ipQueryService);
+            string playerIp = player.GetPlayerIpAddress();
+            var playerInfo = await _playerManager.UpdatePlayerInfoWithCountryAsync(player, _ipQueryService);
 
             Server.NextFrame(() =>
             {
@@ -83,7 +84,7 @@ public class JoinLeaveService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerJoin: {ex.Message}");
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerJoin API Query: Player '{player.PlayerName ?? "Unknown"}' - {ex.Message}");
             _processedJoins.Remove(steamId);
         }
     }
@@ -120,6 +121,7 @@ public class JoinLeaveService
 
         try
         {
+            string playerIp = player.GetPlayerIpAddress();
             var playerInfo = await _playerManager.CreatePlayerInfoWithCountryAsync(player, _ipQueryService);
 
             Server.NextFrame(() =>
@@ -142,7 +144,7 @@ public class JoinLeaveService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerLeave: {ex.Message}");
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerLeave API Query: Player '{player.PlayerName ?? "Unknown"}' - {ex.Message}");
             _processedLeaves.Remove(steamId);
         }
     }

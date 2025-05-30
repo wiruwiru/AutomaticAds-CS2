@@ -439,7 +439,7 @@ public class AdService
 
             if (_config.UseMultiLang)
             {
-                var playerInfo = _playerManager.CreatePlayerInfo(player);
+                var playerInfo = _playerManager.GetOrCreatePlayerInfo(player);
                 formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
             }
             else
