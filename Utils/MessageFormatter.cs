@@ -122,7 +122,8 @@ public class MessageFormatter
     private string ReplacePlayerVariables(string message, PlayerInfo playerInfo)
     {
         message = message.Replace("{id64}", playerInfo.SteamId);
-        message = message.Replace("{country}", playerInfo.Country ?? Constants.ErrorMessages.Unknown);
+        message = message.Replace("{country}", playerInfo.CountryName ?? Constants.ErrorMessages.Unknown);
+        message = message.Replace("{country_code}", playerInfo.CountryCode ?? Constants.ErrorMessages.Unknown);
         return message;
     }
 

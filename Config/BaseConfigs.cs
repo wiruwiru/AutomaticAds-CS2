@@ -47,7 +47,7 @@ public class BaseConfigs : BasePluginConfig
     {
         new JoinLeaveConfig
         {
-            JoinMessage = "{BLUE}{playername} ({id64}) joined the server from {country}! {RED}Online: {players}/{maxplayers}.",
+            JoinMessage = "{BLUE}{playername} ({id64}) joined the server from {country} ({country_code})! {RED}Online: {players}/{maxplayers}.",
             LeaveMessage = "{BLUE}{playername} ({id64}) left the server!",
         }
     };

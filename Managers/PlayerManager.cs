@@ -36,7 +36,23 @@ public class PlayerManager
 
         if (!string.IsNullOrEmpty(playerInfo.IpAddress))
         {
-            playerInfo.Country = await ipQueryService.GetCountryAsync(playerInfo.IpAddress);
+            string countryCode = await ipQueryService.GetCountryCodeAsync(playerInfo.IpAddress);
+
+            if (countryCode != Utils.Constants.ErrorMessages.CountryCodeError)
+            {
+                playerInfo.CountryCode = countryCode;
+                playerInfo.CountryName = CountryMapping.GetCountryName(countryCode);
+            }
+            else
+            {
+                playerInfo.CountryCode = Utils.Constants.ErrorMessages.Unknown;
+                playerInfo.CountryName = Utils.Constants.ErrorMessages.Unknown;
+            }
+        }
+        else
+        {
+            playerInfo.CountryCode = Utils.Constants.ErrorMessages.Unknown;
+            playerInfo.CountryName = Utils.Constants.ErrorMessages.Unknown;
         }
 
         return playerInfo;
