@@ -12,6 +12,9 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("GlobalPlaySound")]
     public string? GlobalPlaySound { get; set; } = "ui/panorama/popup_reveal_01";
 
+    [JsonPropertyName("AdminFlag")]
+    public string? AdminFlag { get; set; } = "@css/generic";
+
     [JsonPropertyName("sendAdsInOrder")]
     public bool SendAdsInOrder { get; set; } = true;
 

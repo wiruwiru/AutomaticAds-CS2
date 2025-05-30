@@ -65,7 +65,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     private void InitializeServices()
     {
-        _messageFormatter = new MessageFormatter();
+        _messageFormatter = new MessageFormatter(Config);
         _timerManager = new TimerManager(this);
         _playerManager = new PlayerManager(this);
         _ipQueryService = new IPQueryService();
