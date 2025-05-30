@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API.Core;
 using AutomaticAds.Config;
+using AutomaticAds.Config.Models;
 using AutomaticAds.Managers;
 using AutomaticAds.Utils;
 
@@ -61,7 +62,7 @@ public class WelcomeService
         }
     }
 
-    private void ValidateWelcomeFlags(BaseConfigs.WelcomeConfig welcome)
+    private void ValidateWelcomeFlags(WelcomeConfig welcome)
     {
         if (string.IsNullOrWhiteSpace(welcome.ViewFlag))
         {
@@ -74,7 +75,7 @@ public class WelcomeService
         }
     }
 
-    private void SendWelcomeToPlayer(CCSPlayerController player, BaseConfigs.WelcomeConfig welcome, string playerName)
+    private void SendWelcomeToPlayer(CCSPlayerController player, WelcomeConfig welcome, string playerName)
     {
         string prefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
         string welcomeMessage = _messageFormatter.FormatMessage(welcome.WelcomeMessage, playerName, prefix);

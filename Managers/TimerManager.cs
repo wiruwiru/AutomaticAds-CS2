@@ -8,6 +8,7 @@ public class TimerManager
     private readonly List<CounterStrikeSharp.API.Modules.Timers.Timer> _timers = new();
     private CounterStrikeSharp.API.Modules.Timers.Timer? _adTimer;
     private CounterStrikeSharp.API.Modules.Timers.Timer? _specAdTimer;
+    private CounterStrikeSharp.API.Modules.Timers.Timer? _onDeadAdTimer;
     private readonly BasePlugin _plugin;
 
     public TimerManager(BasePlugin plugin)
@@ -34,6 +35,12 @@ public class TimerManager
         _specAdTimer = timer;
     }
 
+    public void SetOnDeadAdTimer(CounterStrikeSharp.API.Modules.Timers.Timer timer)
+    {
+        _onDeadAdTimer?.Kill();
+        _onDeadAdTimer = timer;
+    }
+
     public void KillAdTimer()
     {
         _adTimer?.Kill();
@@ -46,6 +53,12 @@ public class TimerManager
         _specAdTimer = null;
     }
 
+    public void KillOnDeadAdTimer()
+    {
+        _onDeadAdTimer?.Kill();
+        _onDeadAdTimer = null;
+    }
+
     public void KillAllTimers()
     {
         _adTimer?.Kill();
@@ -54,9 +67,12 @@ public class TimerManager
         _specAdTimer?.Kill();
         _specAdTimer = null;
 
+        _onDeadAdTimer?.Kill();
+        _onDeadAdTimer = null;
+
         foreach (var timer in _timers)
         {
-            timer.Kill();
+            timer?.Kill();
         }
         _timers.Clear();
     }

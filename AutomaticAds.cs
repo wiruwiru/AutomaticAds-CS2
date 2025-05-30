@@ -4,6 +4,7 @@ using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using AutomaticAds.Config;
+using AutomaticAds.Config.Models;
 using AutomaticAds.Services;
 using AutomaticAds.Managers;
 using AutomaticAds.Utils;
@@ -14,7 +15,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.2.1";
+    public override string ModuleVersion => "1.2.2";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "Send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -143,7 +144,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         }
     }
 
-    private void HandleTriggerCommand(CCSPlayerController? player, BaseConfigs.AdConfig ad)
+    private void HandleTriggerCommand(CCSPlayerController? player, AdConfig ad)
     {
         if (!player.IsValidPlayer())
             return;
