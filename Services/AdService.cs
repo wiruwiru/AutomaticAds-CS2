@@ -3,6 +3,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Timers;
 using AutomaticAds.Config;
+using AutomaticAds.Config.Models;
 using AutomaticAds.Managers;
 using AutomaticAds.Utils;
 
@@ -14,15 +15,16 @@ public class AdService
     private readonly MessageFormatter _messageFormatter;
     private readonly TimerManager _timerManager;
     private readonly PlayerManager _playerManager;
-    private readonly Dictionary<BaseConfigs.AdConfig, DateTime> _lastAdTimes = new();
+    private readonly Dictionary<AdConfig, DateTime> _lastAdTimes = new();
     private int _currentAdIndex = 0;
     private int _currentSpecAdIndex = 0;
+    private int _currentOnDeadAdIndex = 0;
     private string _currentMap = string.Empty;
     private CCSGameRules? _gameRules;
 
-    private List<BaseConfigs.AdConfig> _intervalAds = new();
-    private List<BaseConfigs.AdConfig> _onDeadAds = new();
-    private List<BaseConfigs.AdConfig> _onlySpecAds = new();
+    private List<AdConfig> _intervalAds = new();
+    private List<AdConfig> _onDeadAds = new();
+    private List<AdConfig> _onlySpecAds = new();
 
     public AdService(BaseConfigs config, MessageFormatter messageFormatter, TimerManager timerManager, PlayerManager playerManager)
     {
@@ -65,11 +67,24 @@ public class AdService
         {
             StartIntervalBasedSpecAdvertising();
         }
+
+        if (!_config.SendAdsInOrder)
+        {
+            StartIntervalBasedOnDeadAdvertising();
+        }
+        else
+        {
+            _onDeadAds = _config.Ads.Where(ad => !ad.DisableInterval && ad.onDead).ToList();
+            if (_onDeadAds.Any())
+            {
+                ScheduleNextOnDeadAd();
+            }
+        }
     }
 
-    public bool CanSendAd(BaseConfigs.AdConfig ad)
+    public bool CanSendAd(AdConfig ad)
     {
-        if (ad.DisableInterval || ad.onDead)
+        if (ad.DisableInterval)
             return false;
 
         if (!_lastAdTimes.ContainsKey(ad))
@@ -86,29 +101,42 @@ public class AdService
         return IsIntervalElapsed(ad);
     }
 
-    public void SendAdToPlayers(BaseConfigs.AdConfig ad)
+    public void SendAdToPlayers(AdConfig ad)
     {
-        List<CCSPlayerController> targetPlayers;
-
-        if (ad.onlySpec)
+        if (ad.onDead)
         {
-            targetPlayers = _playerManager.GetValidPlayers()
-                .Where(p => p.Team == CsTeam.Spectator)
+            var deadPlayers = _playerManager.GetValidPlayers()
+                .Where(p => !p.PawnIsAlive)
                 .ToList();
+
+            if (!deadPlayers.Any())
+            {
+                return;
+            }
+
+            foreach (var player in deadPlayers)
+            {
+                if (ShouldSendAdToPlayer(player, ad))
+                {
+                    SendAdToPlayer(player, ad);
+                }
+            }
         }
         else
         {
-            targetPlayers = _playerManager.GetValidPlayers();
-        }
+            List<CCSPlayerController> targetPlayers = _playerManager.GetValidPlayers().ToList();
 
-        if (!targetPlayers.Any())
-            return;
-
-        foreach (var player in targetPlayers)
-        {
-            if (ShouldSendAdToPlayer(player, ad))
+            if (ad.onlySpec)
             {
-                SendAdToPlayer(player, ad);
+                targetPlayers = targetPlayers.Where(p => p.Team == CsTeam.Spectator).ToList();
+            }
+
+            foreach (var player in targetPlayers)
+            {
+                if (ShouldSendAdToPlayer(player, ad))
+                {
+                    SendAdToPlayer(player, ad);
+                }
             }
         }
 
@@ -117,36 +145,49 @@ public class AdService
 
     public void SendOnDeadAds(CCSPlayerController? deadPlayer)
     {
-        if (deadPlayer?.IsValidPlayer() != true)
+        if (deadPlayer?.IsValidPlayer() != true || deadPlayer.PawnIsAlive)
+        {
             return;
+        }
 
-        foreach (var ad in _onDeadAds)
+        var immediateOnDeadAds = _config.Ads.Where(ad => ad.onDead && ad.DisableInterval).ToList();
+
+        foreach (var ad in immediateOnDeadAds)
         {
             if (ShouldSendAdToPlayer(deadPlayer, ad))
             {
                 SendAdToPlayer(deadPlayer, ad);
             }
         }
+
+        var intervalOnDeadAds = _config.Ads.Where(ad => ad.onDead && !ad.DisableInterval).ToList();
+        foreach (var ad in intervalOnDeadAds)
+        {
+            if (CanSendAd(ad) && ShouldSendAdToPlayer(deadPlayer, ad))
+            {
+                SendAdToPlayer(deadPlayer, ad);
+                _lastAdTimes[ad] = DateTime.Now;
+            }
+        }
     }
 
-    private bool ShouldSendAdToPlayer(CCSPlayerController player, BaseConfigs.AdConfig ad)
+    private bool ShouldSendAdToPlayer(CCSPlayerController player, AdConfig ad)
     {
         if (!player.CanViewMessage(ad.ViewFlag, ad.ExcludeFlag))
         {
             return false;
         }
-
         if (ad.onlySpec && player.Team != CsTeam.Spectator)
         {
             return false;
         }
 
-        if (ad.onDead && !IsMapValid(ad))
+        if (!IsMapValid(ad))
         {
             return false;
         }
 
-        if (ad.onDead && !IsWarmupStateValid(ad))
+        if (!IsWarmupStateValid(ad))
         {
             return false;
         }
@@ -157,7 +198,7 @@ public class AdService
     private void SeparateAdTypes()
     {
         _intervalAds = _config.Ads.Where(ad => !ad.DisableInterval && !ad.onDead && !ad.onlySpec).ToList();
-        _onDeadAds = _config.Ads.Where(ad => ad.onDead).ToList();
+        _onDeadAds = _config.Ads.Where(ad => !ad.DisableInterval && ad.onDead).ToList();
         _onlySpecAds = _config.Ads.Where(ad => !ad.DisableInterval && ad.onlySpec).ToList();
     }
 
@@ -196,6 +237,24 @@ public class AdService
                 if (CanSendAd(ad))
                 {
                     SendAdToPlayers(ad);
+                }
+            }, TimerFlags.REPEAT);
+        }
+    }
+
+    private void StartIntervalBasedOnDeadAdvertising()
+    {
+        foreach (var ad in _onDeadAds)
+        {
+            _timerManager.AddTimer(Math.Max(1.0f, ad.Interval / 10.0f), () =>
+            {
+                if (CanSendAd(ad))
+                {
+                    var deadPlayers = _playerManager.GetValidPlayers().Where(p => !p.PawnIsAlive).ToList();
+                    if (deadPlayers.Any())
+                    {
+                        SendAdToPlayers(ad);
+                    }
                 }
             }, TimerFlags.REPEAT);
         }
@@ -245,12 +304,46 @@ public class AdService
         _timerManager.SetSpecAdTimer(timer);
     }
 
-    private bool IsMapValid(BaseConfigs.AdConfig ad)
+    private void ScheduleNextOnDeadAd()
+    {
+        if (!_onDeadAds.Any())
+        {
+            return;
+        }
+
+        var currentOnDeadAd = _onDeadAds[_currentOnDeadAdIndex];
+
+        var timer = _timerManager.AddTimer(currentOnDeadAd.Interval, () =>
+        {
+            if (!IsMapValid(currentOnDeadAd) || !IsWarmupStateValid(currentOnDeadAd))
+            {
+                _currentOnDeadAdIndex = (_currentOnDeadAdIndex + 1) % _onDeadAds.Count;
+                ScheduleNextOnDeadAd();
+                return;
+            }
+
+            var deadPlayers = _playerManager.GetValidPlayers()
+                .Where(p => !p.PawnIsAlive)
+                .ToList();
+
+            if (deadPlayers.Any())
+            {
+                SendAdToPlayers(currentOnDeadAd);
+            }
+
+            _currentOnDeadAdIndex = (_currentOnDeadAdIndex + 1) % _onDeadAds.Count;
+            ScheduleNextOnDeadAd();
+        });
+
+        _timerManager.SetOnDeadAdTimer(timer);
+    }
+
+    private bool IsMapValid(AdConfig ad)
     {
         return _currentMap.MapMatches(ad.Map);
     }
 
-    private bool IsWarmupStateValid(BaseConfigs.AdConfig ad)
+    private bool IsWarmupStateValid(AdConfig ad)
     {
         bool isWarmup = _gameRules?.WarmupPeriod ?? false;
         if (ad.OnlyInWarmup)
@@ -259,7 +352,7 @@ public class AdService
         return !isWarmup;
     }
 
-    private bool IsIntervalElapsed(BaseConfigs.AdConfig ad)
+    private bool IsIntervalElapsed(AdConfig ad)
     {
         if (!_lastAdTimes.ContainsKey(ad))
         {
@@ -273,7 +366,7 @@ public class AdService
         return secondsSinceLastMessage >= ad.Interval;
     }
 
-    private void SendAdToPlayer(CCSPlayerController player, BaseConfigs.AdConfig ad)
+    private void SendAdToPlayer(CCSPlayerController player, AdConfig ad)
     {
         string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
         string formattedMessage = _messageFormatter.FormatMessage(ad.Message, player.PlayerName, formattedPrefix);

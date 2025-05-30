@@ -1,13 +1,17 @@
 using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Cvars;
+using CounterStrikeSharp.API.Modules.Admin;
 using AutomaticAds.Models;
+using AutomaticAds.Config;
 using System.Text.RegularExpressions;
 
 namespace AutomaticAds.Utils;
 
 public class MessageFormatter
 {
+    private readonly BaseConfigs? _config;
     private static readonly Dictionary<string, string> ColorMappings = new()
     {
         { "{GREEN}", ChatColors.Green.ToString() },
@@ -32,6 +36,11 @@ public class MessageFormatter
         { "{SILVER}", ChatColors.Silver.ToString() },
         { "{MAGENTA}", ChatColors.Magenta.ToString() }
     };
+
+    public MessageFormatter(BaseConfigs? config = null)
+    {
+        _config = config;
+    }
 
     public string FormatMessage(string message, string playerName = "", string chatPrefix = "")
     {
@@ -130,6 +139,10 @@ public class MessageFormatter
             int players = GetPlayerCount();
             int maxPlayers = Server.MaxPlayers;
 
+            var adminInfo = GetAdministratorInfo();
+            int adminCount = adminInfo.Count;
+            string adminNames = adminInfo.Count > 0 ? string.Join(", ", adminInfo) : "None";
+
             return new Dictionary<string, string>
             {
                 { "{ip}", ip },
@@ -139,13 +152,51 @@ public class MessageFormatter
                 { "{time}", time },
                 { "{date}", date },
                 { "{players}", players.ToString() },
-                { "{maxplayers}", maxPlayers.ToString() }
+                { "{maxplayers}", maxPlayers.ToString() },
+                { "{admincount}", adminCount.ToString() },
+                { "{adminnames}", adminNames }
             };
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[AutomaticAds] Error getting server variables: {ex.Message}");
             return GetFallbackServerVariables();
+        }
+    }
+
+    private List<string> GetAdministratorInfo()
+    {
+        try
+        {
+            var administrators = new List<string>();
+            string adminFlag = _config?.AdminFlag ?? "@css/generic";
+
+            var validPlayers = Utilities.GetPlayers()
+                .Where(p => p.IsValidPlayer())
+                .ToList();
+
+            foreach (var player in validPlayers)
+            {
+                try
+                {
+                    if (AdminManager.PlayerHasPermissions(player, adminFlag))
+                    {
+                        administrators.Add(player.PlayerName ?? "Unknown");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AutomaticAds] Error checking admin permissions for player {player.PlayerName}: {ex.Message}");
+                    continue;
+                }
+            }
+
+            return administrators;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error getting administrator info: {ex.Message}");
+            return new List<string>();
         }
     }
 
@@ -214,7 +265,9 @@ public class MessageFormatter
             { "{time}", DateTime.Now.ToString("HH:mm") },
             { "{date}", DateTime.Now.ToString("yyyy-MM-dd") },
             { "{players}", "0" },
-            { "{maxplayers}", "0" }
+            { "{maxplayers}", "0" },
+            { "{admincount}", "0" },
+            { "{adminnames}", "None" }
         };
     }
 }

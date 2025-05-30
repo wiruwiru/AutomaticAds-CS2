@@ -1,4 +1,5 @@
 using AutomaticAds.Utils;
+using AutomaticAds.Config.Models;
 
 namespace AutomaticAds.Config;
 
@@ -12,7 +13,7 @@ public static class ConfigValidator
         ValidateCenterHtmlDisplayTime(config);
     }
 
-    private static void ValidateAds(List<BaseConfigs.AdConfig> ads)
+    private static void ValidateAds(List<AdConfig> ads)
     {
         foreach (var ad in ads)
         {
@@ -21,7 +22,7 @@ public static class ConfigValidator
         }
     }
 
-    private static void ValidateAdInterval(BaseConfigs.AdConfig ad)
+    private static void ValidateAdInterval(AdConfig ad)
     {
         if (ad.Interval > Constants.MaxInterval)
         {
@@ -34,7 +35,7 @@ public static class ConfigValidator
         }
     }
 
-    private static void ValidateTriggerAd(BaseConfigs.AdConfig ad)
+    private static void ValidateTriggerAd(AdConfig ad)
     {
         if (ad.TriggerAd != null)
         {
@@ -65,5 +66,4 @@ public static class ConfigValidator
             config.centerHtmlDisplayTime = 5.0f;
         }
     }
-
 }
