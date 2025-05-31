@@ -144,30 +144,58 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         }
     }
 
-    private void HandleTriggerCommand(CCSPlayerController? player, AdConfig ad)
+    private async void HandleTriggerCommand(CCSPlayerController? player, AdConfig ad)
     {
         if (!player.IsValidPlayer())
             return;
 
-        string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
-        string formattedMessage;
-
-        if (Config.UseMultiLang)
+        try
         {
-            var playerInfo = _playerManager!.CreatePlayerInfo(player!);
-            formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
+            string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
+            string formattedMessage;
+
+            if (Config.UseMultiLang)
+            {
+                Models.PlayerInfo playerInfo;
+                
+                if (_playerManager!.NeedsCountryUpdate(player!.SteamID))
+                {
+                    playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player!, _ipQueryService);
+                }
+                else
+                {
+                    playerInfo = _playerManager.GetBasicPlayerInfo(player!);
+                }
+                
+                formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
+            }
+            else
+            {
+                formattedMessage = _messageFormatter.FormatAdMessage(ad, player?.PlayerName ?? "Unknown", "", formattedPrefix);
+            }
+
+            if (!string.IsNullOrWhiteSpace(formattedMessage))
+            {
+                _playerManager!.SendMessageToPlayer(player!, formattedMessage, ad.DisplayType);
+
+                string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
+                if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+                {
+                    _playerManager.PlaySoundToPlayer(player!, soundToPlay);
+                }
+            }
         }
-        else
+        catch (Exception ex)
         {
-            formattedMessage = _messageFormatter.FormatAdMessage(ad, player?.PlayerName ?? "Unknown", "", formattedPrefix);
-        }
+            Console.WriteLine($"[AutomaticAds] Error in HandleTriggerCommand: {ex.Message}");
 
-        _playerManager!.SendMessageToPlayer(player!, formattedMessage, ad.DisplayType);
-
-        string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
-        if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
-        {
-            _playerManager.PlaySoundToPlayer(player!, soundToPlay);
+            string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
+            string fallbackMessage = _messageFormatter.FormatAdMessage(ad, player?.PlayerName ?? "Unknown", "", formattedPrefix);
+            
+            if (!string.IsNullOrWhiteSpace(fallbackMessage))
+            {
+                _playerManager!.SendMessageToPlayer(player!, fallbackMessage, ad.DisplayType);
+            }
         }
     }
 
