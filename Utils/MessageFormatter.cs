@@ -13,6 +13,7 @@ namespace AutomaticAds.Utils;
 public class MessageFormatter
 {
     private readonly BaseConfigs? _config;
+    private string _currentMap = string.Empty;
     private static readonly Dictionary<string, string> ColorMappings = new()
     {
         { "{GREEN}", ChatColors.Green.ToString() },
@@ -37,6 +38,11 @@ public class MessageFormatter
         { "{SILVER}", ChatColors.Silver.ToString() },
         { "{MAGENTA}", ChatColors.Magenta.ToString() }
     };
+
+    public void SetCurrentMap(string mapName)
+    {
+        _currentMap = mapName;
+    }
 
     public MessageFormatter(BaseConfigs? config = null)
     {
@@ -237,32 +243,59 @@ public class MessageFormatter
     {
         try
         {
-            string ip = GetServerIp();
-            string port = GetServerPort();
-            string hostname = GetServerHostname();
-            string map = Server.MapName;
+            string ip = "Unknown:27015";
+            string port = "27015";
+            string hostname = "Unknown";
+            string map = _currentMap ?? "Unknown";
             string time = DateTime.Now.ToString("HH:mm");
             string date = DateTime.Now.ToString("yyyy-MM-dd");
-            int players = GetPlayerCount();
-            int maxPlayers = Server.MaxPlayers;
+            int players = 0;
+            int maxPlayers = 0;
+
+            try
+            {
+                var ipCvar = ConVar.Find("ip");
+                var portCvar = ConVar.Find("hostport");
+                var hostnameCvar = ConVar.Find("hostname");
+
+                if (ipCvar != null && portCvar != null)
+                {
+                    string serverIp = ipCvar.StringValue ?? "Unknown";
+                    int serverPort = portCvar.GetPrimitiveValue<int>();
+                    ip = $"{serverIp}:{serverPort}";
+                    port = serverPort.ToString();
+                }
+
+                if (hostnameCvar != null)
+                {
+                    hostname = hostnameCvar.StringValue ?? "Unknown";
+                }
+
+                players = GetPlayerCount();
+                maxPlayers = Server.MaxPlayers;
+            }
+            catch
+            {
+
+            }
 
             var adminInfo = GetAdministratorInfo();
             int adminCount = adminInfo.Count;
             string adminNames = adminInfo.Count > 0 ? string.Join(", ", adminInfo) : "None";
 
             return new Dictionary<string, string>
-            {
-                { "{ip}", ip },
-                { "{port}", port },
-                { "{hostname}", hostname },
-                { "{map}", map },
-                { "{time}", time },
-                { "{date}", date },
-                { "{players}", players.ToString() },
-                { "{maxplayers}", maxPlayers.ToString() },
-                { "{admincount}", adminCount.ToString() },
-                { "{adminnames}", adminNames }
-            };
+        {
+            { "{ip}", ip },
+            { "{port}", port },
+            { "{hostname}", hostname },
+            { "{map}", map },
+            { "{time}", time },
+            { "{date}", date },
+            { "{players}", players.ToString() },
+            { "{maxplayers}", maxPlayers.ToString() },
+            { "{admincount}", adminCount.ToString() },
+            { "{adminnames}", adminNames }
+        };
         }
         catch (Exception ex)
         {

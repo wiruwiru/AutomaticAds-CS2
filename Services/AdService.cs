@@ -434,7 +434,7 @@ public class AdService
         return $"'{message}' (Interval: {ad.Interval}s)";
     }
 
-    private async void SendAdToPlayer(CCSPlayerController player, AdConfig ad)
+    private void SendAdToPlayer(CCSPlayerController player, AdConfig ad)
     {
         try
         {
@@ -443,41 +443,51 @@ public class AdService
                 return;
             }
 
-            string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
-            string formattedMessage;
-
-            if (_config.UseMultiLang)
+            Server.NextFrame(async () =>
             {
-                Models.PlayerInfo playerInfo;
-
-                if (_playerManager.NeedsCountryUpdate(player.SteamID))
+                try
                 {
-                    playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+                    string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
+                    string formattedMessage;
+
+                    if (_config.UseMultiLang)
+                    {
+                        Models.PlayerInfo playerInfo;
+
+                        if (_playerManager.NeedsCountryUpdate(player.SteamID))
+                        {
+                            playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+                        }
+                        else
+                        {
+                            playerInfo = _playerManager.GetBasicPlayerInfo(player);
+                        }
+
+                        formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
+                    }
+                    else
+                    {
+                        formattedMessage = _messageFormatter.FormatAdMessage(ad, player.PlayerName ?? "Unknown", "", formattedPrefix);
+                    }
+
+                    if (string.IsNullOrWhiteSpace(formattedMessage))
+                    {
+                        return;
+                    }
+
+                    _playerManager.SendMessageToPlayer(player, formattedMessage, ad.DisplayType);
+
+                    string soundToPlay = ad.PlaySoundName ?? _config.GlobalPlaySound ?? string.Empty;
+                    if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+                    {
+                        _playerManager.PlaySoundToPlayer(player, soundToPlay);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    playerInfo = _playerManager.GetBasicPlayerInfo(player);
+                    Console.WriteLine($"[AutomaticAds] Error in SendAdToPlayer NextFrame: {ex.Message}");
                 }
-
-                formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
-            }
-            else
-            {
-                formattedMessage = _messageFormatter.FormatAdMessage(ad, player.PlayerName ?? "Unknown", "", formattedPrefix);
-            }
-
-            if (string.IsNullOrWhiteSpace(formattedMessage))
-            {
-                return;
-            }
-
-            _playerManager.SendMessageToPlayer(player, formattedMessage, ad.DisplayType);
-
-            string soundToPlay = ad.PlaySoundName ?? _config.GlobalPlaySound ?? string.Empty;
-            if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
-            {
-                _playerManager.PlaySoundToPlayer(player, soundToPlay);
-            }
+            });
         }
         catch (Exception ex)
         {
