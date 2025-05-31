@@ -14,6 +14,9 @@ public class MessageFormatter
 {
     private readonly BaseConfigs? _config;
     private string _currentMap = string.Empty;
+    private Dictionary<string, string> _cachedServerVariables = new();
+    private DateTime _lastServerVarUpdate = DateTime.MinValue;
+
     private static readonly Dictionary<string, string> ColorMappings = new()
     {
         { "{GREEN}", ChatColors.Green.ToString() },
@@ -102,7 +105,6 @@ public class MessageFormatter
         try
         {
             string languageCode = GetLanguageFromCountryCode(countryCode);
-
             string message = ad.GetMessage(languageCode);
             if (string.IsNullOrWhiteSpace(message))
             {
@@ -239,7 +241,29 @@ public class MessageFormatter
         return message;
     }
 
-    private Dictionary<string, string> GetServerVariables()
+    public Dictionary<string, string> GetServerVariables()
+    {
+        if ((DateTime.Now - _lastServerVarUpdate).TotalSeconds > 5)
+        {
+            Server.NextFrame(() =>
+            {
+                try
+                {
+                    _cachedServerVariables = GetServerVariablesInternal();
+                    _lastServerVarUpdate = DateTime.Now;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AutomaticAds] Error updating server variables: {ex.Message}");
+                    _cachedServerVariables = GetFallbackServerVariables();
+                }
+            });
+        }
+
+        return _cachedServerVariables.Count > 0 ? _cachedServerVariables : GetFallbackServerVariables();
+    }
+
+    private Dictionary<string, string> GetServerVariablesInternal()
     {
         try
         {
@@ -252,54 +276,46 @@ public class MessageFormatter
             int players = 0;
             int maxPlayers = 0;
 
-            try
+            var ipCvar = ConVar.Find("ip");
+            var portCvar = ConVar.Find("hostport");
+            var hostnameCvar = ConVar.Find("hostname");
+
+            if (ipCvar != null && portCvar != null)
             {
-                var ipCvar = ConVar.Find("ip");
-                var portCvar = ConVar.Find("hostport");
-                var hostnameCvar = ConVar.Find("hostname");
-
-                if (ipCvar != null && portCvar != null)
-                {
-                    string serverIp = ipCvar.StringValue ?? "Unknown";
-                    int serverPort = portCvar.GetPrimitiveValue<int>();
-                    ip = $"{serverIp}:{serverPort}";
-                    port = serverPort.ToString();
-                }
-
-                if (hostnameCvar != null)
-                {
-                    hostname = hostnameCvar.StringValue ?? "Unknown";
-                }
-
-                players = GetPlayerCount();
-                maxPlayers = Server.MaxPlayers;
+                string serverIp = ipCvar.StringValue ?? "Unknown";
+                int serverPort = portCvar.GetPrimitiveValue<int>();
+                ip = $"{serverIp}:{serverPort}";
+                port = serverPort.ToString();
             }
-            catch
+
+            if (hostnameCvar != null)
             {
-
+                hostname = hostnameCvar.StringValue ?? "Unknown";
             }
+
+            players = Utilities.GetPlayers().Count(p => p.IsValid && !p.IsBot && !p.IsHLTV);
+            maxPlayers = Server.MaxPlayers;
 
             var adminInfo = GetAdministratorInfo();
             int adminCount = adminInfo.Count;
             string adminNames = adminInfo.Count > 0 ? string.Join(", ", adminInfo) : "None";
 
             return new Dictionary<string, string>
-        {
-            { "{ip}", ip },
-            { "{port}", port },
-            { "{hostname}", hostname },
-            { "{map}", map },
-            { "{time}", time },
-            { "{date}", date },
-            { "{players}", players.ToString() },
-            { "{maxplayers}", maxPlayers.ToString() },
-            { "{admincount}", adminCount.ToString() },
-            { "{adminnames}", adminNames }
-        };
+            {
+                { "{ip}", ip },
+                { "{port}", port },
+                { "{hostname}", hostname },
+                { "{map}", map },
+                { "{time}", time },
+                { "{date}", date },
+                { "{players}", players.ToString() },
+                { "{maxplayers}", maxPlayers.ToString() },
+                { "{admincount}", adminCount.ToString() },
+                { "{adminnames}", adminNames }
+            };
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"[AutomaticAds] Error getting server variables: {ex.Message}");
             return GetFallbackServerVariables();
         }
     }
@@ -337,60 +353,6 @@ public class MessageFormatter
         {
             Console.WriteLine($"[AutomaticAds] Error getting administrator info: {ex.Message}");
             return new List<string>();
-        }
-    }
-
-    private string GetServerIp()
-    {
-        try
-        {
-            var ipCvar = ConVar.Find("ip");
-            var portCvar = ConVar.Find("hostport");
-            string ip = ipCvar?.StringValue ?? "Unknown";
-            int port = portCvar?.GetPrimitiveValue<int>() ?? 27015;
-            return $"{ip}:{port}";
-        }
-        catch
-        {
-            return "Unknown:27015";
-        }
-    }
-
-    private string GetServerPort()
-    {
-        try
-        {
-            var portCvar = ConVar.Find("hostport");
-            int port = portCvar?.GetPrimitiveValue<int>() ?? 27015;
-            return port.ToString();
-        }
-        catch
-        {
-            return "27015";
-        }
-    }
-
-    private string GetServerHostname()
-    {
-        try
-        {
-            return ConVar.Find("hostname")?.StringValue ?? Constants.ErrorMessages.Unknown;
-        }
-        catch
-        {
-            return Constants.ErrorMessages.Unknown;
-        }
-    }
-
-    private int GetPlayerCount()
-    {
-        try
-        {
-            return Utilities.GetPlayers().Count(p => !p.IsBot && !p.IsHLTV);
-        }
-        catch
-        {
-            return 0;
         }
     }
 

@@ -208,7 +208,17 @@ public class PlayerManager
     {
         if (player.IsValidPlayer() && !string.IsNullOrWhiteSpace(soundName))
         {
-            player.ExecuteClientCommand($"play {soundName}");
+            Server.NextFrame(() =>
+            {
+                try
+                {
+                    player.ExecuteClientCommand($"play {soundName}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AutomaticAds] Error playing sound to player: {ex.Message}");
+                }
+            });
         }
     }
 
@@ -225,20 +235,30 @@ public class PlayerManager
         if (!player.IsValidPlayer() || string.IsNullOrWhiteSpace(message))
             return;
 
-        switch (displayType)
+        Server.NextFrame(() =>
         {
-            case DisplayType.Chat:
-                player.PrintToChat(message);
-                break;
-            case DisplayType.Center:
-                player.PrintToCenterAlert(message);
-                break;
-            case DisplayType.CenterHtml:
-                _plugin?.StartCenterHtmlMessage(player, message);
-                break;
-            default:
-                player.PrintToChat(message);
-                break;
-        }
+            try
+            {
+                switch (displayType)
+                {
+                    case DisplayType.Chat:
+                        player.PrintToChat(message);
+                        break;
+                    case DisplayType.Center:
+                        player.PrintToCenterAlert(message);
+                        break;
+                    case DisplayType.CenterHtml:
+                        _plugin?.StartCenterHtmlMessage(player, message);
+                        break;
+                    default:
+                        player.PrintToChat(message);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AutomaticAds] Error sending message to player: {ex.Message}");
+            }
+        });
     }
 }

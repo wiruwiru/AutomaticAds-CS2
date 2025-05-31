@@ -144,59 +144,54 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         }
     }
 
-    private async void HandleTriggerCommand(CCSPlayerController? player, AdConfig ad)
+    private void HandleTriggerCommand(CCSPlayerController? player, AdConfig ad)
     {
         if (!player.IsValidPlayer())
             return;
 
-        try
+        Server.NextFrame(async () =>
         {
-            string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
-            string formattedMessage;
-
-            if (Config.UseMultiLang)
+            try
             {
-                Models.PlayerInfo playerInfo;
-                
-                if (_playerManager!.NeedsCountryUpdate(player!.SteamID))
+                string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
+                string formattedMessage;
+
+                if (Config.UseMultiLang)
                 {
-                    playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player!, _ipQueryService);
+                    Models.PlayerInfo playerInfo;
+
+                    if (_playerManager!.NeedsCountryUpdate(player!.SteamID))
+                    {
+                        playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player!, _ipQueryService);
+                    }
+                    else
+                    {
+                        playerInfo = _playerManager.GetBasicPlayerInfo(player!);
+                    }
+
+                    formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
                 }
                 else
                 {
-                    playerInfo = _playerManager.GetBasicPlayerInfo(player!);
+                    formattedMessage = _messageFormatter.FormatAdMessage(ad, player?.PlayerName ?? "Unknown", "", formattedPrefix);
                 }
-                
-                formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
-            }
-            else
-            {
-                formattedMessage = _messageFormatter.FormatAdMessage(ad, player?.PlayerName ?? "Unknown", "", formattedPrefix);
-            }
 
-            if (!string.IsNullOrWhiteSpace(formattedMessage))
-            {
-                _playerManager!.SendMessageToPlayer(player!, formattedMessage, ad.DisplayType);
-
-                string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
-                if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+                if (!string.IsNullOrWhiteSpace(formattedMessage))
                 {
-                    _playerManager.PlaySoundToPlayer(player!, soundToPlay);
+                    _playerManager!.SendMessageToPlayer(player!, formattedMessage, ad.DisplayType);
+
+                    string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
+                    if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+                    {
+                        _playerManager.PlaySoundToPlayer(player!, soundToPlay);
+                    }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[AutomaticAds] Error in HandleTriggerCommand: {ex.Message}");
-
-            string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
-            string fallbackMessage = _messageFormatter.FormatAdMessage(ad, player?.PlayerName ?? "Unknown", "", formattedPrefix);
-            
-            if (!string.IsNullOrWhiteSpace(fallbackMessage))
+            catch (Exception ex)
             {
-                _playerManager!.SendMessageToPlayer(player!, fallbackMessage, ad.DisplayType);
+                Console.WriteLine($"[AutomaticAds] Error in HandleTriggerCommand: {ex.Message}");
             }
-        }
+        });
     }
 
     private bool HasReloadPermission(CCSPlayerController player)
