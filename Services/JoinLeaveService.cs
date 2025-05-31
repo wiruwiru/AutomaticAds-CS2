@@ -63,7 +63,7 @@ public class JoinLeaveService
 
         try
         {
-            var playerInfo = await _playerManager.UpdatePlayerInfoWithCountryAsync(player, _ipQueryService);
+            var playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
 
             Server.NextFrame(() =>
             {
@@ -130,7 +130,7 @@ public class JoinLeaveService
 
         try
         {
-            var playerInfo = await _playerManager.CreatePlayerInfoWithCountryAsync(player, _ipQueryService);
+            var playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
 
             Server.NextFrame(() =>
             {

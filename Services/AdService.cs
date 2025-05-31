@@ -434,7 +434,7 @@ public class AdService
         return $"'{message}' (Interval: {ad.Interval}s)";
     }
 
-    private void SendAdToPlayer(CCSPlayerController player, AdConfig ad)
+    private async void SendAdToPlayer(CCSPlayerController player, AdConfig ad)
     {
         try
         {
@@ -448,7 +448,17 @@ public class AdService
 
             if (_config.UseMultiLang)
             {
-                var playerInfo = _playerManager.GetOrCreatePlayerInfo(player);
+                Models.PlayerInfo playerInfo;
+
+                if (_playerManager.NeedsCountryUpdate(player.SteamID))
+                {
+                    playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+                }
+                else
+                {
+                    playerInfo = _playerManager.GetBasicPlayerInfo(player);
+                }
+
                 formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
             }
             else

@@ -123,7 +123,8 @@ public class MessageFormatter
         {
             if (string.IsNullOrEmpty(playerInfo.CountryCode))
             {
-                return _config?.DefaultLanguage ?? "en";
+                string defaultLang = _config?.DefaultLanguage ?? "en";
+                return defaultLang;
             }
 
             if (_config?.UseMultiLang == true)
@@ -131,8 +132,11 @@ public class MessageFormatter
                 string language = GetLanguageFromCountryCode(playerInfo.CountryCode);
                 return language;
             }
-
-            return _config?.DefaultLanguage ?? "en";
+            else
+            {
+                string defaultLang = _config?.DefaultLanguage ?? "en";
+                return defaultLang;
+            }
         }
         catch (Exception ex)
         {

@@ -264,10 +264,77 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         if (@event.Userid?.IsValidPlayer() != true)
             return HookResult.Continue;
 
-        _joinLeaveService?.HandlePlayerJoin(@event.Userid);
-        _welcomeService?.SendWelcomeMessage(@event.Userid);
+        var player = @event.Userid;
+
+        if (Config.EnableJoinLeaveMessages || Config.UseMultiLang)
+        {
+            HandlePlayerConnectWithCountryInfo(player);
+        }
+        else
+        {
+            HandlePlayerConnectBasic(player);
+        }
 
         return HookResult.Continue;
+    }
+
+    private async void HandlePlayerConnectWithCountryInfo(CCSPlayerController player)
+    {
+        try
+        {
+            var playerInfo = await _playerManager!.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+            Server.NextFrame(() =>
+            {
+                try
+                {
+                    if (player.IsValidPlayer())
+                    {
+                        if (Config.EnableJoinLeaveMessages)
+                        {
+                            _joinLeaveService?.HandlePlayerJoin(player);
+                        }
+
+                        _welcomeService?.SendWelcomeMessage(player);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectWithCountryInfo NextFrame: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectWithCountryInfo: {ex.Message}");
+            HandlePlayerConnectBasic(player);
+        }
+    }
+
+    private void HandlePlayerConnectBasic(CCSPlayerController player)
+    {
+        try
+        {
+            _playerManager!.GetBasicPlayerInfo(player);
+
+            Server.NextFrame(() =>
+            {
+                try
+                {
+                    if (player.IsValidPlayer())
+                    {
+                        _welcomeService?.SendWelcomeMessage(player);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectBasic NextFrame: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectBasic: {ex.Message}");
+        }
     }
 
     [GameEventHandler]
