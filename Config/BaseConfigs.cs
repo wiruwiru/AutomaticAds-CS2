@@ -86,6 +86,7 @@ public class BaseConfigs : BasePluginConfig
             Map = "all",
             Interval = 1000,
             DisableSound = true,
+            DisableOrder = true,
             ViewFlag = "@css/vip"
         },
         new AdConfig

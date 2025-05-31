@@ -58,7 +58,7 @@ Each item in the `Ads` list represents a single advertisement. Here are the fiel
 | `onDead` | If `true`, this ad will be sent when a player dies ***(if you don't add it to the announce configuration it will be set to `false` by default)***. | **NO** |
 | `playSoundName` | The specific sound to play when this announcement is sent. If not set, `GlobalPlaySound` will be used if set, provided `disableSound` is not `true`. | **NO** |
 | `triggerAd` | An array of commands that players can use to view this announcement before it is sent automatically. For example: `["command1", "command2"]`. | **NO** |
-| `disableinterval` | If `true`, this ad will not be sent automatically. It will only be sent manually via `triggerAd` commands. (if you don't add it to the announce configuration it will be set to `false` by default). | **NO** |
+| `disableInterval` | If `true`, this ad will not be sent automatically. It will only be sent manually via `triggerAd` commands. (if you don't add it to the announce configuration it will be set to `false` by default). | **NO** |
 ---
 
 ## Configuration Example
@@ -112,7 +112,7 @@ Here is an example configuration file:
       "excludeFlag": "@css/vip",
       "disableSound": true,
       "triggerAd": ["map", "currentmap"],
-      "Disableinterval": true,
+      "disableInterval": true,
       "playSoundName": "sound/ui/beep22.wav"
     },
     {

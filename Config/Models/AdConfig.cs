@@ -62,6 +62,9 @@ public class AdConfig
     [JsonPropertyName("Disableinterval")]
     public bool DisableInterval { get; set; } = false;
 
+    [JsonPropertyName("disableOrder")]
+    public bool DisableOrder { get; set; } = false;
+
     [JsonPropertyName("playSoundName")]
     public string? PlaySoundName { get; set; } = null;
 
