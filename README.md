@@ -47,8 +47,11 @@ Each item in the `Ads` list represents a single advertisement. Here are the fiel
 | Parameter       | Description                                                                                         | Required |
 |-----------------|-----------------------------------------------------------------------------------------------------|----------|
 | `message` | The message/announcement to send in the chat. Supports colors. | **YES**  |
-| `displayType` | Controls how the message is displayed. Options: `"Chat"` (default, normal chat message), `"Center"` (center screen text), `"CenterHtml"` (center screen with HTML formatting support). | **NO** |
+| `playSoundName` | The specific sound to play when this announcement is sent. If not set, `GlobalPlaySound` will be used if set, provided `disableSound` is not `true`. | **NO** |
 | `interval` | The interval **(in seconds)** between sending this ad. Must be between `10` and `3600` ***(if you don't add it to the announce configuration it will be set to `600` by default)***. | **NO** |
+| `disableInterval` | If `true`, this ad will not be sent automatically. It will only be sent manually via `triggerAd` commands. (if you don't add it to the announce configuration it will be set to `false` by default). | **NO** |
+| `disableOrder` | If `true`, this ad will ignore the sequential sending order when `sendAdsInOrder` is enabled. Instead of waiting for its turn in the queue, it will be sent independently based on its own `interval` or the `GlobalInterval` ***(if you don't add it to the announce configuration it will be set to `false` by default)**. | **NO** |
+| `displayType` | Controls how the message is displayed. Options: `"Chat"` (default, normal chat message), `"Center"` (center screen text), `"CenterHtml"` (center screen with HTML formatting support). | **NO** |
 | `viewFlag` | Flag required to view the message. Set it to `“all”` to make it available to all players ***(if you don't add it to the announce settings it will be set to `“all”` by default)***. | **NO** |
 | `excludeFlag` | Users with this flag will not see the message. Set it to `“”` so that no players are excluded ***(if you do not add it to the announce settings it will be set to `“”` by default)***. | **NO** |
 | `map` | The map where this announce should appear. Use `“all”` to show it on all maps or specify a map name ***(if you don't add it to the announce configuration it will be set to `“all”` by default)***. | **NO**   |
@@ -56,9 +59,7 @@ Each item in the `Ads` list represents a single advertisement. Here are the fiel
 | `onlyInWarmup` | If `true`, the ad will only be sent during the warmup period. If `false` or not specified, it will be sent normally regardless of the warmup ***(if you don't add it to the announce configuration it will be set to `false` by default)***.   | **NO** |
 | `onlySpec` | If `true`, this ad will only be sent to players on the spectator team ***(if you don't add it to the announce configuration it will be set to `false` by default)***. | **NO** |
 | `onDead` | If `true`, this ad will be sent when a player dies ***(if you don't add it to the announce configuration it will be set to `false` by default)***. | **NO** |
-| `playSoundName` | The specific sound to play when this announcement is sent. If not set, `GlobalPlaySound` will be used if set, provided `disableSound` is not `true`. | **NO** |
 | `triggerAd` | An array of commands that players can use to view this announcement before it is sent automatically. For example: `["command1", "command2"]`. | **NO** |
-| `disableInterval` | If `true`, this ad will not be sent automatically. It will only be sent manually via `triggerAd` commands. (if you don't add it to the announce configuration it will be set to `false` by default). | **NO** |
 ---
 
 ## Configuration Example
@@ -126,7 +127,8 @@ Here is an example configuration file:
         "es": "{prefix} {WHITE}¡Mensaje en {GREEN}Español{WHITE}!"
       },
       "interval": 120,
-      "disableSound": true
+      "disableSound": true,
+      "disableOrder": true,
     }
   ],
   "ConfigVersion": 1
