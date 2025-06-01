@@ -202,7 +202,7 @@ public class AdService
 
         return adType switch
         {
-            AdType.OnDead => validPlayers.Where(p => !p.PawnIsAlive).ToList(),
+            AdType.OnDead => validPlayers.Where(p => !p.PawnIsAlive && p.Team != CsTeam.Spectator).ToList(),
             AdType.Spectator => validPlayers.Where(p => p.Team == CsTeam.Spectator).ToList(),
             _ => validPlayers
         };
@@ -257,6 +257,11 @@ public class AdService
     public void SendOnDeadAds(CCSPlayerController? deadPlayer)
     {
         if (deadPlayer?.IsValidPlayer() != true || deadPlayer.PawnIsAlive)
+        {
+            return;
+        }
+
+        if (deadPlayer.Team == CsTeam.Spectator)
         {
             return;
         }
