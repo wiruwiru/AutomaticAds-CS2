@@ -256,7 +256,7 @@ public class AdService
 
     public void SendOnDeadAds(CCSPlayerController? deadPlayer)
     {
-        if (deadPlayer?.IsValidPlayer() != true || deadPlayer.PawnIsAlive)
+        if (deadPlayer?.IsValidPlayer() != true || !deadPlayer.PawnIsAlive)
         {
             return;
         }
@@ -269,7 +269,6 @@ public class AdService
         try
         {
             var immediateOnDeadAds = _config.Ads.Where(ad => ad.onDead && ad.DisableInterval).ToList();
-
             foreach (var ad in immediateOnDeadAds)
             {
                 if (ShouldSendAdToPlayer(deadPlayer, ad))

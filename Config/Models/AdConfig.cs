@@ -59,7 +59,7 @@ public class AdConfig
     [JsonPropertyName("triggerAd")]
     public List<string>? TriggerAd { get; set; } = new();
 
-    [JsonPropertyName("Disableinterval")]
+    [JsonPropertyName("disableInterval")]
     public bool DisableInterval { get; set; } = false;
 
     [JsonPropertyName("disableOrder")]
