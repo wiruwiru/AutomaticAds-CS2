@@ -27,13 +27,13 @@ The configuration file will be automatically generated when the plugin is first 
 | `GlobalPlaySound`      | Sound that is played when an announcement is sent in case `playSoundName` is not set in the announcement and `disableSound` is not `true`. Leave it blank to disable it.                             | **YES**  |
 | `GlobalInterval` | Default interval (in seconds) between announcements if no individual interval is set in the ad configuration. (**Default**: 30s) | **YES**  |
 | `AdminFlag`      | The permission flag required for a player to be considered an admin in `{admincount}` and `{adminnames}`. | **YES**  |
-| `sendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
+| `SendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
 | `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **YES**   |
 | `JoinLeaveMessages`  | Set `true` to enable custom connection and disconnection messages. Set `false` to disable it.                        | **YES**   |
 | `WelcomeDelay`  | This is the time the plugin will wait to send the welcome message after the player connects (**Default**: 3s).                        | **YES**   |
-| `centerHtmlDisplayTime`  | "Duration (in seconds) that ads with `displayType` set to `CenterHtml` will remain visible. (**Default**: 5s) | **YES**   |
-| `useMultiLang` | Enables support for multiple languages in messages. When `true`, the plugin will attempt to use the player's language if available. (**Default**: `true`) | **YES**  |
-| `defaultLanguage` | Language used as a fallback when no localized message is found for a player. (**Default**: `en`) | **YES**  |
+| `CenterHtmlDisplayTime`  | "Duration (in seconds) that ads with `displayType` set to `CenterHtml` will remain visible. (**Default**: 5s) | **YES**   |
+| `UseMultiLang` | Enables support for multiple languages in messages. When `true`, the plugin will attempt to use the player's language if available. (**Default**: `true`) | **YES**  |
+| `DefaultLanguage` | Language used as a fallback when no localized message is found for a player. (**Default**: `en`) | **YES**  |
 | `Welcome`     | Configuration for the welcome announcement. Supports variables ***(see example below)***. | **NO**   |
 | `JoinLeave`     | Configuration for connection and disconnection messages. Supports variables ***(see example below)***. | **NO**   |
 | `Ads`                | List of advertisements to be sent. Each ad can be configured individually ***(see example below)***. | **YES**  |

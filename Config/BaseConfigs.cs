@@ -18,7 +18,7 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("AdminFlag")]
     public string? AdminFlag { get; set; } = "@css/generic";
 
-    [JsonPropertyName("sendAdsInOrder")]
+    [JsonPropertyName("SendAdsInOrder")]
     public bool SendAdsInOrder { get; set; } = true;
 
     [JsonPropertyName("UseWelcomeMessage")]
@@ -30,13 +30,13 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("WelcomeDelay")]
     public float WelcomeDelay { get; set; } = 3.0f;
 
-    [JsonPropertyName("centerHtmlDisplayTime")]
+    [JsonPropertyName("CenterHtmlDisplayTime")]
     public float centerHtmlDisplayTime { get; set; } = 5.0f;
 
-    [JsonPropertyName("useMultiLang")]
+    [JsonPropertyName("UseMultiLang")]
     public bool UseMultiLang { get; set; } = true;
 
-    [JsonPropertyName("defaultLanguage")]
+    [JsonPropertyName("DefaultLanguage")]
     public string DefaultLanguage { get; set; } = "en";
 
     [JsonPropertyName("Welcome")]
