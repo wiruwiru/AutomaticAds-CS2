@@ -38,7 +38,6 @@ The configuration file will be automatically generated when the plugin is first 
 | `JoinLeave`     | Configuration for connection and disconnection messages. Supports variables ***(see example below)***. | **NO**   |
 | `Ads`                | List of advertisements to be sent. Each ad can be configured individually ***(see example below)***. | **YES**  |
 
-
 ---
 
 ### Ads Configuration
@@ -70,13 +69,13 @@ Here is an example configuration file:
   "GlobalPlaySound": "ui/panorama/popup_reveal_01",
   "GlobalInterval": 30,
   "AdminFlag": "@css/generic",
-  "sendAdsInOrder": true,
+  "SendAdsInOrder": true,
   "UseWelcomeMessage": true,
   "JoinLeaveMessages": true,
   "WelcomeDelay": 3,
-  "centerHtmlDisplayTime": 5,
-  "useMultiLang": true,
-  "defaultLanguage": "en",
+  "CenterHtmlDisplayTime": 5,
+  "UseMultiLang": true,
+  "DefaultLanguage": "en",
   "Welcome": [
     {
       "WelcomeMessage": "{prefix} {BLUE}Welcome to the server {playername}! {RED}Playing on {map} with {players}/{maxplayers} players.",
