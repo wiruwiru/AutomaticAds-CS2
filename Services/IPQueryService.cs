@@ -1,26 +1,27 @@
 using Newtonsoft.Json;
 using AutomaticAds.Utils;
+using AutomaticAds.Models;
 
 namespace AutomaticAds.Services;
 
 public interface IIPQueryService
 {
-    Task<string> GetCountryAsync(string ipAddress);
-    Task<string> IPQueryAsync(string ipAddress, string endpoint);
+    Task<string> GetCountryCodeAsync(string ipAddress);
+    Task<string> GetCountryNameAsync(string ipAddress);
 }
 
 public class IPQueryService : IIPQueryService
 {
     private static readonly HttpClient _httpClient = new();
 
-    public async Task<string> GetCountryAsync(string ipAddress)
+    public async Task<string> GetCountryCodeAsync(string ipAddress)
     {
         if (string.IsNullOrWhiteSpace(ipAddress))
             return Constants.ErrorMessages.CountryCodeError;
 
         try
         {
-            string requestUri = $"{Constants.ApiUrls.IpApiBase}{ipAddress}";
+            string requestUri = $"{Constants.ApiUrls.CountryApiBase}{ipAddress}";
             HttpResponseMessage response = await _httpClient.GetAsync(requestUri).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
@@ -30,43 +31,41 @@ public class IPQueryService : IIPQueryService
             }
 
             string jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var data = JsonConvert.DeserializeObject<dynamic>(jsonResponse);
+            var countryResponse = JsonConvert.DeserializeObject<CountryApiResponse>(jsonResponse);
 
-            return data?.country?.ToString() ?? Constants.ErrorMessages.CountryCodeError;
+            if (countryResponse?.Country == null)
+            {
+                LogError("Country field is null in API response");
+                return Constants.ErrorMessages.CountryCodeError;
+            }
+
+            return countryResponse.Country;
         }
         catch (HttpRequestException ex)
         {
-            LogError($"HttpRequestException in GetCountryAsync: {ex.Message}");
+            LogError($"HttpRequestException in GetCountryCodeAsync: {ex.Message}");
+            return Constants.ErrorMessages.CountryCodeError;
+        }
+        catch (JsonException ex)
+        {
+            LogError($"JsonException in GetCountryCodeAsync: {ex.Message}");
             return Constants.ErrorMessages.CountryCodeError;
         }
         catch (Exception ex)
         {
-            LogError($"Exception in GetCountryAsync: {ex.Message}");
+            LogError($"Exception in GetCountryCodeAsync: {ex.Message}");
             return Constants.ErrorMessages.CountryCodeError;
         }
     }
 
-    public async Task<string> IPQueryAsync(string ipAddress, string endpoint)
+    public async Task<string> GetCountryNameAsync(string ipAddress)
     {
-        if (string.IsNullOrWhiteSpace(ipAddress) || string.IsNullOrWhiteSpace(endpoint))
-            return Constants.ErrorMessages.GenericError;
+        string countryCode = await GetCountryCodeAsync(ipAddress);
 
-        try
-        {
-            string apiUrl = $"{Constants.ApiUrls.IpApiCoBase}{ipAddress}/{endpoint}/";
-            string response = await _httpClient.GetStringAsync(apiUrl).ConfigureAwait(false);
-            return response?.Trim() ?? Constants.ErrorMessages.GenericError;
-        }
-        catch (HttpRequestException ex)
-        {
-            LogError($"HttpRequestException in IPQueryAsync: {ex.Message}");
-            return Constants.ErrorMessages.GenericError;
-        }
-        catch (Exception ex)
-        {
-            LogError($"Exception in IPQueryAsync: {ex.Message}");
-            return Constants.ErrorMessages.GenericError;
-        }
+        if (countryCode == Constants.ErrorMessages.CountryCodeError)
+            return Constants.ErrorMessages.Unknown;
+
+        return CountryMapping.GetCountryName(countryCode);
     }
 
     private static void LogError(string message)

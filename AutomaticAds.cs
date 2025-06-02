@@ -15,7 +15,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.2.2";
+    public override string ModuleVersion => "1.2.3";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "Send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -70,7 +70,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         _playerManager = new PlayerManager(this);
         _ipQueryService = new IPQueryService();
 
-        _adService = new AdService(Config, _messageFormatter, _timerManager, _playerManager);
+        _adService = new AdService(Config, _messageFormatter, _timerManager, _playerManager, _ipQueryService);
         _welcomeService = new WelcomeService(Config, _messageFormatter, _timerManager, _playerManager);
         _joinLeaveService = new JoinLeaveService(Config, _messageFormatter, _playerManager, _ipQueryService, _timerManager);
     }
@@ -120,7 +120,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
             try
             {
-                Server.ExecuteCommand("css_plugins reload AutomaticAds");
+                Server.ExecuteCommand($"css_plugins reload {ModuleName}");
                 string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
                 commandInfo.ReplyToCommand($"{formattedPrefix} {Localizer["Reloaded"]}");
             }
@@ -149,16 +149,49 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         if (!player.IsValidPlayer())
             return;
 
-        string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
-        string formattedMessage = _messageFormatter.FormatMessage(ad.Message, player!.PlayerName, formattedPrefix);
-
-        _playerManager!.SendMessageToPlayer(player, formattedMessage, ad.DisplayType);
-
-        string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
-        if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+        Server.NextFrame(async () =>
         {
-            _playerManager.PlaySoundToPlayer(player, soundToPlay);
-        }
+            try
+            {
+                string formattedPrefix = _messageFormatter!.FormatMessage(Config.ChatPrefix);
+                string formattedMessage;
+
+                if (Config.UseMultiLang)
+                {
+                    Models.PlayerInfo playerInfo;
+
+                    if (_playerManager!.NeedsCountryUpdate(player!.SteamID))
+                    {
+                        playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player!, _ipQueryService);
+                    }
+                    else
+                    {
+                        playerInfo = _playerManager.GetBasicPlayerInfo(player!);
+                    }
+
+                    formattedMessage = _messageFormatter.FormatAdMessage(ad, playerInfo, formattedPrefix);
+                }
+                else
+                {
+                    formattedMessage = _messageFormatter.FormatAdMessage(ad, player?.PlayerName ?? "Unknown", "", formattedPrefix);
+                }
+
+                if (!string.IsNullOrWhiteSpace(formattedMessage))
+                {
+                    _playerManager!.SendMessageToPlayer(player!, formattedMessage, ad.DisplayType);
+
+                    string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
+                    if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
+                    {
+                        _playerManager.PlaySoundToPlayer(player!, soundToPlay);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AutomaticAds] Error in HandleTriggerCommand: {ex.Message}");
+            }
+        });
     }
 
     private bool HasReloadPermission(CCSPlayerController player)
@@ -254,10 +287,77 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         if (@event.Userid?.IsValidPlayer() != true)
             return HookResult.Continue;
 
-        _joinLeaveService?.HandlePlayerJoin(@event.Userid);
-        _welcomeService?.SendWelcomeMessage(@event.Userid);
+        var player = @event.Userid;
+
+        if (Config.EnableJoinLeaveMessages || Config.UseMultiLang)
+        {
+            HandlePlayerConnectWithCountryInfo(player);
+        }
+        else
+        {
+            HandlePlayerConnectBasic(player);
+        }
 
         return HookResult.Continue;
+    }
+
+    private async void HandlePlayerConnectWithCountryInfo(CCSPlayerController player)
+    {
+        try
+        {
+            var playerInfo = await _playerManager!.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+            Server.NextFrame(() =>
+            {
+                try
+                {
+                    if (player.IsValidPlayer())
+                    {
+                        if (Config.EnableJoinLeaveMessages)
+                        {
+                            _joinLeaveService?.HandlePlayerJoin(player);
+                        }
+
+                        _welcomeService?.SendWelcomeMessage(player);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectWithCountryInfo NextFrame: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectWithCountryInfo: {ex.Message}");
+            HandlePlayerConnectBasic(player);
+        }
+    }
+
+    private void HandlePlayerConnectBasic(CCSPlayerController player)
+    {
+        try
+        {
+            _playerManager!.GetBasicPlayerInfo(player);
+
+            Server.NextFrame(() =>
+            {
+                try
+                {
+                    if (player.IsValidPlayer())
+                    {
+                        _welcomeService?.SendWelcomeMessage(player);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectBasic NextFrame: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectBasic: {ex.Message}");
+        }
     }
 
     [GameEventHandler]
@@ -279,6 +379,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
         StopCenterHtmlMessage(player!);
 
+        _playerManager?.ClearPlayerCache(player!);
         _joinLeaveService?.HandlePlayerLeave(player!);
         _welcomeService?.OnPlayerDisconnect(player!);
         _joinLeaveService?.OnPlayerDisconnect(player!);

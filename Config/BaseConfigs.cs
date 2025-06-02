@@ -12,10 +12,13 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("GlobalPlaySound")]
     public string? GlobalPlaySound { get; set; } = "ui/panorama/popup_reveal_01";
 
+    [JsonPropertyName("GlobalInterval")]
+    public float GlobalInterval { get; set; } = 30.0f;
+
     [JsonPropertyName("AdminFlag")]
     public string? AdminFlag { get; set; } = "@css/generic";
 
-    [JsonPropertyName("sendAdsInOrder")]
+    [JsonPropertyName("SendAdsInOrder")]
     public bool SendAdsInOrder { get; set; } = true;
 
     [JsonPropertyName("UseWelcomeMessage")]
@@ -27,8 +30,14 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("WelcomeDelay")]
     public float WelcomeDelay { get; set; } = 3.0f;
 
-    [JsonPropertyName("centerHtmlDisplayTime")]
+    [JsonPropertyName("CenterHtmlDisplayTime")]
     public float centerHtmlDisplayTime { get; set; } = 5.0f;
+
+    [JsonPropertyName("UseMultiLang")]
+    public bool UseMultiLang { get; set; } = true;
+
+    [JsonPropertyName("DefaultLanguage")]
+    public string DefaultLanguage { get; set; } = "en";
 
     [JsonPropertyName("Welcome")]
     public List<WelcomeConfig> Welcome { get; set; } = new()
@@ -47,7 +56,7 @@ public class BaseConfigs : BasePluginConfig
     {
         new JoinLeaveConfig
         {
-            JoinMessage = "{BLUE}{playername} ({id64}) joined the server from {country}! {RED}Online: {players}/{maxplayers}.",
+            JoinMessage = "{BLUE}{playername} ({id64}) joined the server from {country} ({country_code})! {RED}Online: {players}/{maxplayers}.",
             LeaveMessage = "{BLUE}{playername} ({id64}) left the server!",
         }
     };
@@ -77,6 +86,7 @@ public class BaseConfigs : BasePluginConfig
             Map = "all",
             Interval = 1000,
             DisableSound = true,
+            DisableOrder = true,
             ViewFlag = "@css/vip"
         },
         new AdConfig

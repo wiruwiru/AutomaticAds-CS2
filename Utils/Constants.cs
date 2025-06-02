@@ -21,7 +21,6 @@ public static class Constants
 
     public static class ApiUrls
     {
-        public const string IpApiBase = "http://ip-api.com/json/";
-        public const string IpApiCoBase = "https://ipapi.co/";
+        public const string CountryApiBase = "https://api.country.is/";
     }
 }

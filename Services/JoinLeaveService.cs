@@ -35,9 +35,14 @@ public class JoinLeaveService
             return;
 
         ulong steamId;
+        string? playerName = null;
+        string playerIp = string.Empty;
+
         try
         {
             steamId = player.SteamID;
+            playerName = player.PlayerName;
+            playerIp = player.GetPlayerIpAddress();
         }
         catch
         {
@@ -58,7 +63,7 @@ public class JoinLeaveService
 
         try
         {
-            var playerInfo = await _playerManager.CreatePlayerInfoWithCountryAsync(player, _ipQueryService);
+            var playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
 
             Server.NextFrame(() =>
             {
@@ -83,7 +88,7 @@ public class JoinLeaveService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerJoin: {ex.Message}");
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerJoin API Query: Player '{playerName ?? "Unknown"}' - {ex.Message}");
             _processedJoins.Remove(steamId);
         }
     }
@@ -97,9 +102,14 @@ public class JoinLeaveService
             return;
 
         ulong steamId;
+        string? playerName = null;
+        string playerIp = string.Empty;
+
         try
         {
             steamId = player.SteamID;
+            playerName = player.PlayerName;
+            playerIp = player.GetPlayerIpAddress();
         }
         catch
         {
@@ -120,7 +130,7 @@ public class JoinLeaveService
 
         try
         {
-            var playerInfo = await _playerManager.CreatePlayerInfoWithCountryAsync(player, _ipQueryService);
+            var playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
 
             Server.NextFrame(() =>
             {
@@ -142,7 +152,7 @@ public class JoinLeaveService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerLeave: {ex.Message}");
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerLeave API Query: Player '{playerName ?? "Unknown"}' - {ex.Message}");
             _processedLeaves.Remove(steamId);
         }
     }

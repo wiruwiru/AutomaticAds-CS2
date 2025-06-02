@@ -25,16 +25,18 @@ The configuration file will be automatically generated when the plugin is first 
 |----------------------|---------------------------------------------------------------------------------------------------|----------|
 | `ChatPrefix`         | The prefix displayed in the chat before each announcement. Supports colors. To use it, include `{prefix}` inside the `message` field in the ads configuration.                        | **YES**  |
 | `GlobalPlaySound`      | Sound that is played when an announcement is sent in case `playSoundName` is not set in the announcement and `disableSound` is not `true`. Leave it blank to disable it.                             | **YES**  |
+| `GlobalInterval` | Default interval (in seconds) between announcements if no individual interval is set in the ad configuration. (**Default**: 30s) | **YES**  |
 | `AdminFlag`      | The permission flag required for a player to be considered an admin in `{admincount}` and `{adminnames}`. | **YES**  |
-| `sendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
+| `SendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
 | `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **YES**   |
 | `JoinLeaveMessages`  | Set `true` to enable custom connection and disconnection messages. Set `false` to disable it.                        | **YES**   |
 | `WelcomeDelay`  | This is the time the plugin will wait to send the welcome message after the player connects (**Default**: 3s).                        | **YES**   |
-| `centerHtmlDisplayTime`  | "Duration (in seconds) that ads with `displayType` set to `CenterHtml` will remain visible. (**Default**: 5s) | **YES**   |
+| `CenterHtmlDisplayTime`  | "Duration (in seconds) that ads with `displayType` set to `CenterHtml` will remain visible. (**Default**: 5s) | **YES**   |
+| `UseMultiLang` | Enables support for multiple languages in messages. When `true`, the plugin will attempt to use the player's language if available. (**Default**: `true`) | **YES**  |
+| `DefaultLanguage` | Language used as a fallback when no localized message is found for a player. (**Default**: `en`) | **YES**  |
 | `Welcome`     | Configuration for the welcome announcement. Supports variables ***(see example below)***. | **NO**   |
 | `JoinLeave`     | Configuration for connection and disconnection messages. Supports variables ***(see example below)***. | **NO**   |
 | `Ads`                | List of advertisements to be sent. Each ad can be configured individually ***(see example below)***. | **YES**  |
-
 
 ---
 
@@ -44,18 +46,19 @@ Each item in the `Ads` list represents a single advertisement. Here are the fiel
 | Parameter       | Description                                                                                         | Required |
 |-----------------|-----------------------------------------------------------------------------------------------------|----------|
 | `message` | The message/announcement to send in the chat. Supports colors. | **YES**  |
-| `displayType` | Controls how the message is displayed. Options: `"Chat"` (default, normal chat message), `"Center"` (center screen text), `"CenterHtml"` (center screen with HTML formatting support). | **NO** |
-| `interval` | The interval **(in seconds)** between sending this ad. Must be between `10` and `3600` ***(if you don't add it to the announce configuration it will be set to `600` by default)***. | **NO** |
 | `viewFlag` | Flag required to view the message. Set it to `“all”` to make it available to all players ***(if you don't add it to the announce settings it will be set to `“all”` by default)***. | **NO** |
 | `excludeFlag` | Users with this flag will not see the message. Set it to `“”` so that no players are excluded ***(if you do not add it to the announce settings it will be set to `“”` by default)***. | **NO** |
 | `map` | The map where this announce should appear. Use `“all”` to show it on all maps or specify a map name ***(if you don't add it to the announce configuration it will be set to `“all”` by default)***. | **NO**   |
+| `interval` | The interval **(in seconds)** between sending this ad. Must be between `10` and `3600` ***(if you don't add it to the announce configuration it will be set to `600` by default)***. | **NO** |
 | `disableSound` | If `true`, no sound will be played when this ad is sent ***(if you don't add it to the announce configuration it will be set to `false` by default)***. | **NO** |
 | `onlyInWarmup` | If `true`, the ad will only be sent during the warmup period. If `false` or not specified, it will be sent normally regardless of the warmup ***(if you don't add it to the announce configuration it will be set to `false` by default)***.   | **NO** |
 | `onlySpec` | If `true`, this ad will only be sent to players on the spectator team ***(if you don't add it to the announce configuration it will be set to `false` by default)***. | **NO** |
 | `onDead` | If `true`, this ad will be sent when a player dies ***(if you don't add it to the announce configuration it will be set to `false` by default)***. | **NO** |
-| `playSoundName` | The specific sound to play when this announcement is sent. If not set, `GlobalPlaySound` will be used if set, provided `disableSound` is not `true`. | **NO** |
 | `triggerAd` | An array of commands that players can use to view this announcement before it is sent automatically. For example: `["command1", "command2"]`. | **NO** |
-| `disableinterval` | If `true`, this ad will not be sent automatically. It will only be sent manually via `triggerAd` commands. (if you don't add it to the announce configuration it will be set to `false` by default). | **NO** |
+| `disableInterval` | If `true`, this ad will not be sent automatically. It will only be sent manually via `triggerAd` commands. (if you don't add it to the announce configuration it will be set to `false` by default). | **NO** |
+| `disableOrder` | If `true`, this ad will ignore the sequential sending order when `sendAdsInOrder` is enabled. Instead of waiting for its turn in the queue, it will be sent independently based on its own `interval` or the `GlobalInterval` ***(if you don't add it to the announce configuration it will be set to `false` by default)**. | **NO** |
+| `playSoundName` | The specific sound to play when this announcement is sent. If not set, `GlobalPlaySound` will be used if set, provided `disableSound` is not `true`. | **NO** |
+| `displayType` | Controls how the message is displayed. Options: `"Chat"` (default, normal chat message), `"Center"` (center screen text), `"CenterHtml"` (center screen with HTML formatting support). | **NO** |
 ---
 
 ## Configuration Example
@@ -64,8 +67,15 @@ Here is an example configuration file:
 {
   "ChatPrefix": " [{GREEN}AutomaticAds{WHITE}]{WHITE}",
   "GlobalPlaySound": "ui/panorama/popup_reveal_01",
-  "sendAdsInOrder": true,
+  "GlobalInterval": 30,
+  "AdminFlag": "@css/generic",
+  "SendAdsInOrder": true,
   "UseWelcomeMessage": true,
+  "JoinLeaveMessages": true,
+  "WelcomeDelay": 3,
+  "CenterHtmlDisplayTime": 5,
+  "UseMultiLang": true,
+  "DefaultLanguage": "en",
   "Welcome": [
     {
       "WelcomeMessage": "{prefix} {BLUE}Welcome to the server {playername}! {RED}Playing on {map} with {players}/{maxplayers} players.",
@@ -76,18 +86,14 @@ Here is an example configuration file:
   ],
   "JoinLeave": [
     {
-      "JoinMessage": "{BLUE}{playername} ({id64}) {GREEN}joined the server from {country}! {WHITE}Online: {GOLD}{players}{WHITE}/{RED}{maxplayers}.",
+      "JoinMessage": "{BLUE}{playername} ({id64}) {GREEN}joined the server from {country} ({country_code})! {WHITE}Online: {GOLD}{players}{WHITE}/{RED}{maxplayers}.",
       "LeaveMessage": "{BLUE}{playername} ({id64}) {RED}left the server!"
     }
   ],
   "Ads": [
     {
       "message": "{prefix} {RED}AutomaticAds is the best plugin!",
-      "viewFlag": "all",
       "excludeFlag": "@css/vip",
-      "map": "all",
-      "interval": 600,
-      "disableSound": false,
       "onlyInWarmup": true
     },
     {
@@ -106,13 +112,22 @@ Here is an example configuration file:
       "excludeFlag": "@css/vip",
       "disableSound": true,
       "triggerAd": ["map", "currentmap"],
-      "Disableinterval": true,
+      "disableInterval": true,
       "playSoundName": "sound/ui/beep22.wav"
     },
     {
       "message": "<font class='fontSize-m' color='orange'>This server uses</font><br><font class='fontSize-l' style='color:red;'>AutomaticAds</font></font>",
-      "displayType": "Chat",
+      "displayType": "CenterHtml",
       "disableSound": true,
+    },
+    {
+      "message": {
+        "en": "{prefix} {WHITE}Message in {GREEN}English{WHITE}!",
+        "es": "{prefix} {WHITE}¡Mensaje en {GREEN}Español{WHITE}!"
+      },
+      "interval": 120,
+      "disableSound": true,
+      "disableOrder": true,
     }
   ],
   "ConfigVersion": 1

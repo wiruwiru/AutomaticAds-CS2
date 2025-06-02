@@ -18,5 +18,6 @@
 | Connect & disconnect messages         | **Complete**    | Add messages for connect/disconnect events. | Medium          |
 | Variable for JoinLeave         | **Complete**    | Add `{country}` and `{id64}` variables for JoinLeave messages. | High |
 | Support for changing message method   | **Complete**    | Add support for sending messages via chat, HTML Center, or Panel, allowing users to choose.        | High       |
+| Multi-language ads                    | **Complete**    | Allow users to configure ad language and support ads in multiple languages.                        | Medium       |
+| Multi-language support for welcome message | **In Progress** | Extend multi-language support to welcome messages sent on player connection.                         | Medium       |
 | Server/Client Commands in triggerAds  | Pending    | Add support for triggerAds to execute server or client commands. | Medium       |
-| Multi-language ads                    | Pending    | Allow users to configure ad language and support ads in multiple languages.                        | Medium       |

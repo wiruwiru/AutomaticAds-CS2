@@ -5,6 +5,7 @@ using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Admin;
 using AutomaticAds.Models;
 using AutomaticAds.Config;
+using AutomaticAds.Config.Models;
 using System.Text.RegularExpressions;
 
 namespace AutomaticAds.Utils;
@@ -12,6 +13,10 @@ namespace AutomaticAds.Utils;
 public class MessageFormatter
 {
     private readonly BaseConfigs? _config;
+    private string _currentMap = string.Empty;
+    private Dictionary<string, string> _cachedServerVariables = new();
+    private DateTime _lastServerVarUpdate = DateTime.MinValue;
+
     private static readonly Dictionary<string, string> ColorMappings = new()
     {
         { "{GREEN}", ChatColors.Green.ToString() },
@@ -36,6 +41,11 @@ public class MessageFormatter
         { "{SILVER}", ChatColors.Silver.ToString() },
         { "{MAGENTA}", ChatColors.Magenta.ToString() }
     };
+
+    public void SetCurrentMap(string mapName)
+    {
+        _currentMap = mapName;
+    }
 
     public MessageFormatter(BaseConfigs? config = null)
     {
@@ -63,6 +73,110 @@ public class MessageFormatter
         message = FormatMessage(message, playerInfo.Name, chatPrefix);
         message = ReplacePlayerVariables(message, playerInfo);
         return message;
+    }
+
+    public string FormatAdMessage(AdConfig ad, PlayerInfo playerInfo, string chatPrefix = "")
+    {
+        try
+        {
+            string languageCode = GetPlayerLanguage(playerInfo);
+            string message = ad.GetMessage(languageCode);
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = ad.GetMessage("en");
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return string.Empty;
+            }
+
+            return FormatMessageWithPlayerInfo(message, playerInfo, chatPrefix);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error formatting ad message: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    public string FormatAdMessage(AdConfig ad, string playerName = "", string countryCode = "", string chatPrefix = "")
+    {
+        try
+        {
+            string languageCode = GetLanguageFromCountryCode(countryCode);
+            string message = ad.GetMessage(languageCode);
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = ad.GetMessage("en");
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return string.Empty;
+            }
+
+            return FormatMessage(message, playerName, chatPrefix);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error formatting ad message: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    private string GetPlayerLanguage(PlayerInfo playerInfo)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(playerInfo.CountryCode))
+            {
+                string defaultLang = _config?.DefaultLanguage ?? "en";
+                return defaultLang;
+            }
+
+            if (_config?.UseMultiLang == true)
+            {
+                string language = GetLanguageFromCountryCode(playerInfo.CountryCode);
+                return language;
+            }
+            else
+            {
+                string defaultLang = _config?.DefaultLanguage ?? "en";
+                return defaultLang;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error getting player language: {ex.Message}");
+            return "en";
+        }
+    }
+
+    private string GetLanguageFromCountryCode(string countryCode)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(countryCode))
+            {
+                string defaultLang = _config?.DefaultLanguage ?? "en";
+                return defaultLang;
+            }
+
+            string mappedLanguage = CountryMapping.GetCountryLanguage(countryCode);
+            if (string.IsNullOrEmpty(mappedLanguage))
+            {
+                string defaultLang = _config?.DefaultLanguage ?? "en";
+                return defaultLang;
+            }
+
+            return mappedLanguage;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error mapping country code to language: {ex.Message}");
+            return _config?.DefaultLanguage ?? "en";
+        }
     }
 
     private string ProcessPrefix(string message, string chatPrefix)
@@ -122,22 +236,65 @@ public class MessageFormatter
     private string ReplacePlayerVariables(string message, PlayerInfo playerInfo)
     {
         message = message.Replace("{id64}", playerInfo.SteamId);
-        message = message.Replace("{country}", playerInfo.Country ?? Constants.ErrorMessages.Unknown);
+        message = message.Replace("{country}", playerInfo.CountryName ?? Constants.ErrorMessages.Unknown);
+        message = message.Replace("{country_code}", playerInfo.CountryCode ?? Constants.ErrorMessages.Unknown);
         return message;
     }
 
-    private Dictionary<string, string> GetServerVariables()
+    public Dictionary<string, string> GetServerVariables()
+    {
+        if ((DateTime.Now - _lastServerVarUpdate).TotalSeconds > 5)
+        {
+            Server.NextFrame(() =>
+            {
+                try
+                {
+                    _cachedServerVariables = GetServerVariablesInternal();
+                    _lastServerVarUpdate = DateTime.Now;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AutomaticAds] Error updating server variables: {ex.Message}");
+                    _cachedServerVariables = GetFallbackServerVariables();
+                }
+            });
+        }
+
+        return _cachedServerVariables.Count > 0 ? _cachedServerVariables : GetFallbackServerVariables();
+    }
+
+    private Dictionary<string, string> GetServerVariablesInternal()
     {
         try
         {
-            string ip = GetServerIp();
-            string port = GetServerPort();
-            string hostname = GetServerHostname();
-            string map = Server.MapName;
+            string ip = "Unknown:27015";
+            string port = "27015";
+            string hostname = "Unknown";
+            string map = _currentMap ?? "Unknown";
             string time = DateTime.Now.ToString("HH:mm");
             string date = DateTime.Now.ToString("yyyy-MM-dd");
-            int players = GetPlayerCount();
-            int maxPlayers = Server.MaxPlayers;
+            int players = 0;
+            int maxPlayers = 0;
+
+            var ipCvar = ConVar.Find("ip");
+            var portCvar = ConVar.Find("hostport");
+            var hostnameCvar = ConVar.Find("hostname");
+
+            if (ipCvar != null && portCvar != null)
+            {
+                string serverIp = ipCvar.StringValue ?? "Unknown";
+                int serverPort = portCvar.GetPrimitiveValue<int>();
+                ip = $"{serverIp}:{serverPort}";
+                port = serverPort.ToString();
+            }
+
+            if (hostnameCvar != null)
+            {
+                hostname = hostnameCvar.StringValue ?? "Unknown";
+            }
+
+            players = Utilities.GetPlayers().Count(p => p.IsValid && !p.IsBot && !p.IsHLTV);
+            maxPlayers = Server.MaxPlayers;
 
             var adminInfo = GetAdministratorInfo();
             int adminCount = adminInfo.Count;
@@ -157,9 +314,8 @@ public class MessageFormatter
                 { "{adminnames}", adminNames }
             };
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"[AutomaticAds] Error getting server variables: {ex.Message}");
             return GetFallbackServerVariables();
         }
     }
@@ -197,60 +353,6 @@ public class MessageFormatter
         {
             Console.WriteLine($"[AutomaticAds] Error getting administrator info: {ex.Message}");
             return new List<string>();
-        }
-    }
-
-    private string GetServerIp()
-    {
-        try
-        {
-            var ipCvar = ConVar.Find("ip");
-            var portCvar = ConVar.Find("hostport");
-            string ip = ipCvar?.StringValue ?? "Unknown";
-            int port = portCvar?.GetPrimitiveValue<int>() ?? 27015;
-            return $"{ip}:{port}";
-        }
-        catch
-        {
-            return "Unknown:27015";
-        }
-    }
-
-    private string GetServerPort()
-    {
-        try
-        {
-            var portCvar = ConVar.Find("hostport");
-            int port = portCvar?.GetPrimitiveValue<int>() ?? 27015;
-            return port.ToString();
-        }
-        catch
-        {
-            return "27015";
-        }
-    }
-
-    private string GetServerHostname()
-    {
-        try
-        {
-            return ConVar.Find("hostname")?.StringValue ?? Constants.ErrorMessages.Unknown;
-        }
-        catch
-        {
-            return Constants.ErrorMessages.Unknown;
-        }
-    }
-
-    private int GetPlayerCount()
-    {
-        try
-        {
-            return Utilities.GetPlayers().Count(p => !p.IsBot && !p.IsHLTV);
-        }
-        catch
-        {
-            return 0;
         }
     }
 
