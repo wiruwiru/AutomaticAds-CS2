@@ -357,7 +357,7 @@ public class AdService
         if (ad.OnlyInWarmup)
             return isWarmup;
 
-        return !isWarmup;
+        return true;
     }
 
     private bool IsIntervalElapsed(AdConfig ad)
