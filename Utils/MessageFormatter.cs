@@ -243,21 +243,27 @@ public class MessageFormatter
 
     public Dictionary<string, string> GetServerVariables()
     {
-        if ((DateTime.Now - _lastServerVarUpdate).TotalSeconds > 5)
+        bool needsUpdate = (DateTime.Now - _lastServerVarUpdate).TotalSeconds > 5 || _cachedServerVariables.Count == 0;
+
+        if (needsUpdate)
         {
-            Server.NextFrame(() =>
+            try
             {
-                try
+                var newVariables = GetServerVariablesInternal();
+                if (newVariables.Count > 0)
                 {
-                    _cachedServerVariables = GetServerVariablesInternal();
+                    _cachedServerVariables = newVariables;
                     _lastServerVarUpdate = DateTime.Now;
                 }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AutomaticAds] Error updating server variables: {ex.Message}");
+                if (_cachedServerVariables.Count == 0)
                 {
-                    Console.WriteLine($"[AutomaticAds] Error updating server variables: {ex.Message}");
                     _cachedServerVariables = GetFallbackServerVariables();
                 }
-            });
+            }
         }
 
         return _cachedServerVariables.Count > 0 ? _cachedServerVariables : GetFallbackServerVariables();
