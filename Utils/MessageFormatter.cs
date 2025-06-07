@@ -42,10 +42,7 @@ public class MessageFormatter
         { "{MAGENTA}", ChatColors.Magenta.ToString() }
     };
 
-    public void SetCurrentMap(string mapName)
-    {
-        _currentMap = mapName;
-    }
+    public void SetCurrentMap(string mapName) => _currentMap = mapName;
 
     public MessageFormatter(BaseConfigs? config = null)
     {
