@@ -31,6 +31,7 @@ For detailed installation instructions, configuration examples, and advanced usa
 | `JoinLeaveMessages`  | Set `true` to enable custom connection and disconnection messages. Set `false` to disable it.                        | **YES**   |
 | `WelcomeDelay`  | This is the time the plugin will wait to send the welcome message after the player connects (**Default**: 3s).                        | **YES**   |
 | `CenterHtmlDisplayTime`  | Duration (in seconds) that ads with `displayType` set to `CenterHtml` will remain visible. (**Default**: 5s) | **YES**   |
+| `ScreenDisplayTime`  | Duration (in seconds) that ads with `displayType` set to `Screen` will remain visible. (**Default**: 5s) | **YES**   |
 | `UseMultiLang` | Enables support for multiple languages in messages. When `true`, the plugin will attempt to use the player's language if available. (**Default**: `true`) | **YES**  |
 | `DefaultLanguage` | Language used as a fallback when no localized message is found for a player. (**Default**: `en`) | **YES**  |
 | `Welcome`     | Configuration for the welcome announcement. Supports variables. | **NO**   |
@@ -54,7 +55,7 @@ For detailed installation instructions, configuration examples, and advanced usa
 | `disableInterval` | If `true`, this ad will not be sent automatically. It will only be sent manually via `triggerAd` commands (default: `false`). | **NO** |
 | `disableOrder` | If `true`, this ad will ignore the sequential sending order when `sendAdsInOrder` is enabled (default: `false`). | **NO** |
 | `playSoundName` | The specific sound to play when this announcement is sent. If not set, `GlobalPlaySound` will be used if set, provided `disableSound` is not `true`. | **NO** |
-| `displayType` | Controls how the message is displayed. Options: `"Chat"` (default, normal chat message), `"Center"` (center screen text), `"CenterHtml"` (center screen with HTML formatting support). | **NO** |
+| `displayType` | Controls how the message is displayed. Options: `"Chat"` (default, normal chat message), `"Center"` (center screen text), `"CenterHtml"` (center screen with HTML formatting support), `"Screen"` (floating text on the player's screen). | **NO** |
 
 ### Available Colors
 `GREEN`, `RED`, `YELLOW`, `BLUE`, `ORANGE`, `WHITE`, `PURPLE`, `GREY`, `LIGHT_RED`, `LIGHT_BLUE`, `LIGHT_YELLOW`, `LIGHT_PURPLE`, `DARK_RED`, `BLUE_GREY`, `DARK_BLUE`, `LIME`, `OLIVE`, `GOLD`, `SILVER`, `MAGENTA`.
