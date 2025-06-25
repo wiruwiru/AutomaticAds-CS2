@@ -213,7 +213,7 @@ public class AdService
     {
         return displayType switch
         {
-            DisplayType.Screen => players.Where(p => p.PawnIsAlive).ToList(),
+            DisplayType.Screen => players,
             _ => players
         };
     }
@@ -313,11 +313,6 @@ public class AdService
             }
 
             if (ad.onlySpec && player.Team != CsTeam.Spectator)
-            {
-                return false;
-            }
-
-            if (ad.DisplayType == DisplayType.Screen && !player.PawnIsAlive)
             {
                 return false;
             }
@@ -442,7 +437,13 @@ public class AdService
                         return;
                     }
 
-                    _playerManager.SendMessageToPlayer(player, formattedMessage, ad.DisplayType);
+                    DisplayType effectiveDisplayType = ad.DisplayType;
+                    if (ad.DisplayType == DisplayType.Screen && !player.PawnIsAlive)
+                    {
+                        effectiveDisplayType = DisplayType.Chat;
+                    }
+
+                    _playerManager.SendMessageToPlayer(player, formattedMessage, effectiveDisplayType);
 
                     string soundToPlay = ad.PlaySoundName ?? _config.GlobalPlaySound ?? string.Empty;
                     if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))

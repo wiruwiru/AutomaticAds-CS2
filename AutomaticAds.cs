@@ -185,7 +185,13 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
                 if (!string.IsNullOrWhiteSpace(formattedMessage))
                 {
-                    _playerManager!.SendMessageToPlayer(player!, formattedMessage, ad.DisplayType);
+                    DisplayType effectiveDisplayType = ad.DisplayType;
+                    if (ad.DisplayType == DisplayType.Screen && !player!.PawnIsAlive)
+                    {
+                        effectiveDisplayType = DisplayType.Chat;
+                    }
+
+                    _playerManager!.SendMessageToPlayer(player!, formattedMessage, effectiveDisplayType);
 
                     string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
                     if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
