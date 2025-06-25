@@ -33,6 +33,9 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("CenterHtmlDisplayTime")]
     public float centerHtmlDisplayTime { get; set; } = 5.0f;
 
+    [JsonPropertyName("ScreenDisplayTime")]
+    public float ScreenDisplayTime { get; set; } = 5.0f;
+
     [JsonPropertyName("UseMultiLang")]
     public bool UseMultiLang { get; set; } = true;
 

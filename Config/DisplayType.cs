@@ -7,5 +7,6 @@ public enum DisplayType
 {
     Chat,
     Center,
-    CenterHtml
+    CenterHtml,
+    Screen
 }

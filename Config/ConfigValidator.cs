@@ -12,6 +12,7 @@ public static class ConfigValidator
         ValidateChatPrefix(config);
         ValidateGlobalPlaySound(config);
         ValidateCenterHtmlDisplayTime(config);
+        ValidateScreenDisplayTime(config);
     }
 
     private static void ValidateGlobalInterval(BaseConfigs config)
@@ -92,6 +93,19 @@ public static class ConfigValidator
         if (config.centerHtmlDisplayTime <= 0)
         {
             config.centerHtmlDisplayTime = 5.0f;
+        }
+    }
+
+    private static void ValidateScreenDisplayTime(BaseConfigs config)
+    {
+        if (config.ScreenDisplayTime <= 0)
+        {
+            config.ScreenDisplayTime = 5.0f;
+        }
+
+        if (config.ScreenDisplayTime > 30.0f)
+        {
+            config.ScreenDisplayTime = 30.0f;
         }
     }
 }

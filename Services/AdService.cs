@@ -2,6 +2,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Timers;
+
 using AutomaticAds.Config;
 using AutomaticAds.Config.Models;
 using AutomaticAds.Managers;
@@ -204,7 +205,16 @@ public class AdService
         {
             AdType.OnDead => validPlayers.Where(p => !p.PawnIsAlive && p.Team != CsTeam.Spectator).ToList(),
             AdType.Spectator => validPlayers.Where(p => p.Team == CsTeam.Spectator).ToList(),
-            _ => validPlayers
+            _ => FilterPlayersForDisplayType(validPlayers, ad.DisplayType)
+        };
+    }
+
+    private List<CCSPlayerController> FilterPlayersForDisplayType(List<CCSPlayerController> players, DisplayType displayType)
+    {
+        return displayType switch
+        {
+            DisplayType.Screen => players.Where(p => p.PawnIsAlive).ToList(),
+            _ => players
         };
     }
 
@@ -307,6 +317,11 @@ public class AdService
                 return false;
             }
 
+            if (ad.DisplayType == DisplayType.Screen && !player.PawnIsAlive)
+            {
+                return false;
+            }
+
             if (!IsMapValid(ad))
             {
                 return false;
@@ -383,7 +398,7 @@ public class AdService
             message = message.Substring(0, 47) + "...";
         }
 
-        return $"'{message}' (Interval: {ad.Interval}s)";
+        return $"'{message}' (Interval: {ad.Interval}s, DisplayType: {ad.DisplayType})";
     }
 
     private void SendAdToPlayer(CCSPlayerController player, AdConfig ad)
