@@ -3,10 +3,11 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Admin;
+using System.Text.RegularExpressions;
+
 using AutomaticAds.Models;
 using AutomaticAds.Config;
 using AutomaticAds.Config.Models;
-using System.Text.RegularExpressions;
 
 namespace AutomaticAds.Utils;
 
@@ -122,6 +123,113 @@ public class MessageFormatter
         }
     }
 
+    public string FormatJoinLeaveMessage(JoinLeaveConfig joinLeaveConfig, PlayerInfo playerInfo, string chatPrefix = "", bool isJoinMessage = true)
+    {
+        try
+        {
+            string languageCode = GetPlayerLanguage(playerInfo);
+            string message = isJoinMessage ?
+                joinLeaveConfig.GetJoinMessage(languageCode) :
+                joinLeaveConfig.GetLeaveMessage(languageCode);
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = isJoinMessage ?
+                    joinLeaveConfig.GetJoinMessage("en") :
+                    joinLeaveConfig.GetLeaveMessage("en");
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return string.Empty;
+            }
+
+            return FormatMessageWithPlayerInfo(message, playerInfo, chatPrefix);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error formatting join/leave message: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    public string FormatWelcomeMessage(WelcomeConfig welcomeConfig, PlayerInfo playerInfo, string chatPrefix = "")
+    {
+        try
+        {
+            string languageCode = GetPlayerLanguage(playerInfo);
+            string message = welcomeConfig.GetWelcomeMessage(languageCode);
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = welcomeConfig.GetWelcomeMessage("en");
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return string.Empty;
+            }
+
+            return FormatMessageWithPlayerInfo(message, playerInfo, chatPrefix);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error formatting welcome message: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    public string FormatJoinLeaveMessage(JoinLeaveConfig joinLeaveConfig, string playerName, string chatPrefix = "", bool isJoinMessage = true)
+    {
+        try
+        {
+            string message = isJoinMessage ?
+                joinLeaveConfig.GetJoinMessage("en") :
+                joinLeaveConfig.GetLeaveMessage("en");
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return string.Empty;
+            }
+
+            var basicPlayerInfo = new PlayerInfo
+            {
+                Name = playerName,
+                CountryCode = Constants.ErrorMessages.Unknown,
+                CountryName = Constants.ErrorMessages.Unknown,
+                SteamId = "Unknown",
+                IpAddress = ""
+            };
+
+            return FormatMessageWithPlayerInfo(message, basicPlayerInfo, chatPrefix);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error formatting basic join/leave message: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    public string FormatWelcomeMessage(WelcomeConfig welcomeConfig, string playerName, string chatPrefix = "")
+    {
+        try
+        {
+            string message = welcomeConfig.GetWelcomeMessage("en");
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return string.Empty;
+            }
+
+            return FormatMessage(message, playerName, chatPrefix);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error formatting basic welcome message: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
     private string GetPlayerLanguage(PlayerInfo playerInfo)
     {
         try
@@ -150,7 +258,7 @@ public class MessageFormatter
         }
     }
 
-    private string GetLanguageFromCountryCode(string countryCode)
+    public string GetLanguageFromCountryCode(string countryCode)
     {
         try
         {
@@ -233,8 +341,8 @@ public class MessageFormatter
     private string ReplacePlayerVariables(string message, PlayerInfo playerInfo)
     {
         message = message.Replace("{id64}", playerInfo.SteamId);
-        message = message.Replace("{country}", playerInfo.CountryName ?? Constants.ErrorMessages.Unknown);
-        message = message.Replace("{country_code}", playerInfo.CountryCode ?? Constants.ErrorMessages.Unknown);
+        message = message.Replace("{country}", playerInfo.CountryName ?? Utils.Constants.ErrorMessages.Unknown);
+        message = message.Replace("{country_code}", playerInfo.CountryCode ?? Utils.Constants.ErrorMessages.Unknown);
         return message;
     }
 

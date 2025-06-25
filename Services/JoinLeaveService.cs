@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+
 using AutomaticAds.Config;
 using AutomaticAds.Managers;
 using AutomaticAds.Models;
@@ -55,7 +56,7 @@ public class JoinLeaveService
         _processedJoins.Add(steamId);
 
         var joinConfig = _config.JoinLeave.FirstOrDefault();
-        if (joinConfig == null)
+        if (joinConfig == null || !joinConfig.HasValidJoinMessage())
         {
             _processedJoins.Remove(steamId);
             return;
@@ -63,7 +64,19 @@ public class JoinLeaveService
 
         try
         {
-            var playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+            string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
+            PlayerInfo joiningPlayerInfo;
+
+            if (_config.UseMultiLang)
+            {
+                joiningPlayerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+            }
+            else
+            {
+                joiningPlayerInfo = _playerManager.GetBasicPlayerInfo(player);
+                joiningPlayerInfo.CountryCode = Utils.Constants.ErrorMessages.Unknown;
+                joiningPlayerInfo.CountryName = Utils.Constants.ErrorMessages.Unknown;
+            }
 
             Server.NextFrame(() =>
             {
@@ -71,14 +84,59 @@ public class JoinLeaveService
                 {
                     if (player.IsValidPlayer())
                     {
-                        string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
-                        string joinMessage = _messageFormatter.FormatMessageWithPlayerInfo(joinConfig.JoinMessage, playerInfo, formattedPrefix);
-                        Server.PrintToChatAll(joinMessage);
+                        var validPlayers = _playerManager.GetValidPlayers();
+
+                        foreach (var targetPlayer in validPlayers)
+                        {
+                            try
+                            {
+                                string joinMessage;
+
+                                if (_config.UseMultiLang)
+                                {
+                                    var targetPlayerInfo = _playerManager.GetBasicPlayerInfo(targetPlayer);
+
+                                    var messagePlayerInfo = new Models.PlayerInfo
+                                    {
+                                        Name = joiningPlayerInfo.Name,
+                                        SteamId = joiningPlayerInfo.SteamId,
+                                        IpAddress = joiningPlayerInfo.IpAddress,
+                                        CountryCode = joiningPlayerInfo.CountryCode,
+                                        CountryName = joiningPlayerInfo.CountryName
+                                    };
+
+                                    string targetLanguage = _messageFormatter.GetLanguageFromCountryCode(targetPlayerInfo.CountryCode);
+                                    string message = joinConfig.GetJoinMessage(targetLanguage);
+                                    if (string.IsNullOrWhiteSpace(message))
+                                    {
+                                        message = joinConfig.GetJoinMessage("en");
+                                    }
+
+                                    if (!string.IsNullOrWhiteSpace(message))
+                                    {
+                                        joinMessage = _messageFormatter.FormatMessageWithPlayerInfo(message, messagePlayerInfo, formattedPrefix);
+                                        targetPlayer.PrintToChat(joinMessage);
+                                    }
+                                }
+                                else
+                                {
+                                    joinMessage = _messageFormatter.FormatJoinLeaveMessage(joinConfig, joiningPlayerInfo, formattedPrefix, true);
+                                    if (!string.IsNullOrWhiteSpace(joinMessage))
+                                    {
+                                        targetPlayer.PrintToChat(joinMessage);
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[AutomaticAds] Error sending join message to player {targetPlayer.PlayerName ?? "Unknown"}: {ex.Message}");
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[AutomaticAds] Error formatting join message: {ex.Message}");
+                    Console.WriteLine($"[AutomaticAds] Error in HandlePlayerJoin NextFrame: {ex.Message}");
                 }
                 finally
                 {
@@ -88,7 +146,7 @@ public class JoinLeaveService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerJoin API Query: Player '{playerName ?? "Unknown"}' - {ex.Message}");
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerJoin: Player '{playerName ?? "Unknown"}' - {ex.Message}");
             _processedJoins.Remove(steamId);
         }
     }
@@ -122,7 +180,7 @@ public class JoinLeaveService
         _processedLeaves.Add(steamId);
 
         var leaveConfig = _config.JoinLeave.FirstOrDefault();
-        if (leaveConfig == null)
+        if (leaveConfig == null || !leaveConfig.HasValidLeaveMessage())
         {
             _processedLeaves.Remove(steamId);
             return;
@@ -130,19 +188,65 @@ public class JoinLeaveService
 
         try
         {
-            var playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+            string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
+            PlayerInfo leavingPlayerInfo;
+
+            if (_config.UseMultiLang)
+            {
+                leavingPlayerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+            }
+            else
+            {
+                leavingPlayerInfo = _playerManager.GetBasicPlayerInfo(player);
+                leavingPlayerInfo.CountryCode = Utils.Constants.ErrorMessages.Unknown;
+                leavingPlayerInfo.CountryName = Utils.Constants.ErrorMessages.Unknown;
+            }
 
             Server.NextFrame(() =>
             {
                 try
                 {
-                    string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
-                    string leaveMessage = _messageFormatter.FormatMessageWithPlayerInfo(leaveConfig.LeaveMessage, playerInfo, formattedPrefix);
-                    Server.PrintToChatAll(leaveMessage);
+                    var validPlayers = _playerManager.GetValidPlayers().Where(p => p.SteamID != steamId).ToList();
+                    foreach (var targetPlayer in validPlayers)
+                    {
+                        try
+                        {
+                            string leaveMessage;
+
+                            if (_config.UseMultiLang)
+                            {
+                                var targetPlayerInfo = _playerManager.GetBasicPlayerInfo(targetPlayer);
+                                string targetLanguage = _messageFormatter.GetLanguageFromCountryCode(targetPlayerInfo.CountryCode);
+                                string message = leaveConfig.GetLeaveMessage(targetLanguage);
+                                if (string.IsNullOrWhiteSpace(message))
+                                {
+                                    message = leaveConfig.GetLeaveMessage("en");
+                                }
+
+                                if (!string.IsNullOrWhiteSpace(message))
+                                {
+                                    leaveMessage = _messageFormatter.FormatMessageWithPlayerInfo(message, leavingPlayerInfo, formattedPrefix);
+                                    targetPlayer.PrintToChat(leaveMessage);
+                                }
+                            }
+                            else
+                            {
+                                leaveMessage = _messageFormatter.FormatJoinLeaveMessage(leaveConfig, leavingPlayerInfo, formattedPrefix, false);
+                                if (!string.IsNullOrWhiteSpace(leaveMessage))
+                                {
+                                    targetPlayer.PrintToChat(leaveMessage);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[AutomaticAds] Error sending leave message to player {targetPlayer.PlayerName ?? "Unknown"}: {ex.Message}");
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[AutomaticAds] Error formatting leave message: {ex.Message}");
+                    Console.WriteLine($"[AutomaticAds] Error in HandlePlayerLeave NextFrame: {ex.Message}");
                 }
                 finally
                 {
@@ -152,7 +256,7 @@ public class JoinLeaveService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerLeave API Query: Player '{playerName ?? "Unknown"}' - {ex.Message}");
+            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerLeave: Player '{playerName ?? "Unknown"}' - {ex.Message}");
             _processedLeaves.Remove(steamId);
         }
     }
