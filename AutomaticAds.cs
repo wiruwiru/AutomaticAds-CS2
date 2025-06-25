@@ -15,7 +15,7 @@ namespace AutomaticAds;
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.2.5";
+    public override string ModuleVersion => "1.2.6";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "Send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -49,6 +49,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         {
             _currentMap = Server.MapName;
             _adService?.SetCurrentMap(_currentMap);
+            _messageFormatter?.SetCurrentMap(_currentMap);
         }
 
         if (!string.IsNullOrWhiteSpace(Server.MapName))

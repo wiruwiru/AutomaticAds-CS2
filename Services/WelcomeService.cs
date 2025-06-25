@@ -1,4 +1,5 @@
 using CounterStrikeSharp.API.Core;
+
 using AutomaticAds.Config;
 using AutomaticAds.Config.Models;
 using AutomaticAds.Managers;
@@ -32,11 +33,12 @@ public class WelcomeService
 
         _processedPlayers.Add(player.SteamID);
 
-        string playerName = player.PlayerName ?? string.Empty;
-
         foreach (var welcome in _config.Welcome)
         {
             ValidateWelcomeFlags(welcome);
+
+            if (!welcome.HasValidMessage())
+                continue;
 
             if (player.CanViewMessage(welcome.ViewFlag, welcome.ExcludeFlag))
             {
@@ -47,11 +49,10 @@ public class WelcomeService
                         return;
                     }
 
-                    SendWelcomeToPlayer(player, welcome, playerName);
+                    SendWelcomeToPlayer(player, welcome);
                 });
             }
         }
-
     }
 
     public void OnPlayerDisconnect(CCSPlayerController player)
@@ -75,16 +76,50 @@ public class WelcomeService
         }
     }
 
-    private void SendWelcomeToPlayer(CCSPlayerController player, WelcomeConfig welcome, string playerName)
+    private void SendWelcomeToPlayer(CCSPlayerController player, WelcomeConfig welcome)
     {
-        string prefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
-        string welcomeMessage = _messageFormatter.FormatMessage(welcome.WelcomeMessage, playerName, prefix);
-
-        _playerManager.SendMessageToPlayer(player, welcomeMessage);
-
-        if (!welcome.DisableSound && !string.IsNullOrWhiteSpace(_config.GlobalPlaySound))
+        try
         {
-            _playerManager.PlaySoundToPlayer(player, _config.GlobalPlaySound);
+            string formattedPrefix = _messageFormatter.FormatMessage(_config.ChatPrefix);
+            string welcomeMessage;
+
+            if (_config.UseMultiLang)
+            {
+                Models.PlayerInfo playerInfo;
+
+                if (_playerManager.NeedsCountryUpdate(player.SteamID))
+                {
+                    playerInfo = _playerManager.GetBasicPlayerInfo(player);
+                }
+                else
+                {
+                    playerInfo = _playerManager.GetBasicPlayerInfo(player);
+                }
+
+                welcomeMessage = _messageFormatter.FormatWelcomeMessage(welcome, playerInfo, formattedPrefix);
+            }
+            else
+            {
+                var basicPlayerInfo = _playerManager.GetBasicPlayerInfo(player);
+                basicPlayerInfo.CountryCode = Utils.Constants.ErrorMessages.Unknown;
+                basicPlayerInfo.CountryName = Utils.Constants.ErrorMessages.Unknown;
+
+                welcomeMessage = _messageFormatter.FormatWelcomeMessage(welcome, basicPlayerInfo, formattedPrefix);
+            }
+
+            if (!string.IsNullOrWhiteSpace(welcomeMessage))
+            {
+                _playerManager.SendMessageToPlayer(player, welcomeMessage);
+
+                if (!welcome.DisableSound && !string.IsNullOrWhiteSpace(_config.GlobalPlaySound))
+                {
+                    _playerManager.PlaySoundToPlayer(player, _config.GlobalPlaySound);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error sending welcome message to player {player.PlayerName ?? "Unknown"}: {ex.Message}");
         }
     }
 }
