@@ -191,7 +191,16 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                         effectiveDisplayType = DisplayType.Chat;
                     }
 
-                    _playerManager!.SendMessageToPlayer(player!, formattedMessage, effectiveDisplayType);
+                    if (effectiveDisplayType == DisplayType.Screen)
+                    {
+                        float positionX = ad.GetEffectivePositionX(Config.GlobalPositionX);
+                        float positionY = ad.GetEffectivePositionY(Config.GlobalPositionY);
+                        _playerManager!.SendMessageToPlayer(player!, formattedMessage, effectiveDisplayType, positionX, positionY);
+                    }
+                    else
+                    {
+                        _playerManager!.SendMessageToPlayer(player!, formattedMessage, effectiveDisplayType);
+                    }
 
                     string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
                     if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))

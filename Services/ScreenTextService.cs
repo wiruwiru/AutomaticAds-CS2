@@ -14,7 +14,7 @@ public class ScreenTextService
     private readonly TimerManager _timerManager;
     private readonly float _displayTime;
 
-    public float PositionX { get; set; } = -1.8f;
+    public float PositionX { get; set; } = -1.5f;
     public float PositionY { get; set; } = 1f;
 
     public ScreenTextService(TimerManager timerManager, float displayTime = 5.0f)
@@ -23,7 +23,18 @@ public class ScreenTextService
         _displayTime = displayTime;
     }
 
+    public void SetPositions(float positionX, float positionY)
+    {
+        PositionX = positionX;
+        PositionY = positionY;
+    }
+
     public void ShowTextOnScreen(CCSPlayerController player, string text)
+    {
+        ShowTextOnScreen(player, text, PositionX, PositionY);
+    }
+
+    public void ShowTextOnScreen(CCSPlayerController player, string text, float positionX, float positionY)
     {
         if (!player.IsValid || !player.PawnIsAlive)
             return;
@@ -37,7 +48,7 @@ public class ScreenTextService
             return;
         }
 
-        var vectorData = CalculateTextPosition(player);
+        var vectorData = CalculateTextPosition(player, positionX, positionY);
         if (!vectorData.HasValue)
         {
             Console.WriteLine($"[AutomaticAds] Error: Could not calculate position for {player.PlayerName}");
@@ -142,6 +153,11 @@ public class ScreenTextService
 
     private VectorData? CalculateTextPosition(CCSPlayerController player)
     {
+        return CalculateTextPosition(player, PositionX, PositionY);
+    }
+
+    private VectorData? CalculateTextPosition(CCSPlayerController player, float positionX, float positionY)
+    {
         var playerPawn = GetPlayerPawn(player);
         if (playerPawn == null) return null;
 
@@ -152,7 +168,7 @@ public class ScreenTextService
             Vector forward = new(), right = new(), up = new();
             NativeAPI.AngleVectors(eyeAngles.Handle, forward.Handle, right.Handle, up.Handle);
 
-            var adjustedPositions = ApplyFOVAdjustment(player, PositionX, PositionY);
+            var adjustedPositions = ApplyFOVAdjustment(player, positionX, positionY);
 
             Vector textOffset = forward * 7.0f + right * adjustedPositions.X + up * adjustedPositions.Y;
             Vector finalPosition = playerPawn.AbsOrigin! + textOffset + new Vector(0, 0, playerPawn.ViewOffset.Z);

@@ -443,7 +443,16 @@ public class AdService
                         effectiveDisplayType = DisplayType.Chat;
                     }
 
-                    _playerManager.SendMessageToPlayer(player, formattedMessage, effectiveDisplayType);
+                    if (effectiveDisplayType == DisplayType.Screen)
+                    {
+                        float positionX = ad.GetEffectivePositionX(_config.GlobalPositionX);
+                        float positionY = ad.GetEffectivePositionY(_config.GlobalPositionY);
+                        _playerManager.SendMessageToPlayer(player, formattedMessage, effectiveDisplayType, positionX, positionY);
+                    }
+                    else
+                    {
+                        _playerManager.SendMessageToPlayer(player, formattedMessage, effectiveDisplayType);
+                    }
 
                     string soundToPlay = ad.PlaySoundName ?? _config.GlobalPlaySound ?? string.Empty;
                     if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))

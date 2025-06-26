@@ -25,6 +25,8 @@ For detailed installation instructions, configuration examples, and advanced usa
 | `ChatPrefix`         | The prefix displayed in the chat before each announcement. Supports colors. To use it, include `{prefix}` inside the `message` field in the ads configuration.                        | **YES**  |
 | `GlobalPlaySound`      | Sound that is played when an announcement is sent in case `playSoundName` is not set in the announcement and `disableSound` is not `true`. Leave it blank to disable it.                             | **YES**  |
 | `GlobalInterval` | Default interval (in seconds) between announcements if no individual interval is set in the ad configuration. (**Default**: 30s) | **YES**  |
+| `GlobalPositionX` | Default X position for screen messages. Range: -5.0 to 5.0. Negative values = left, positive = right. (**Default**: -1.8) | **YES**  |
+| `GlobalPositionY` | Default Y position for screen messages. Range: -3.0 to 3.0. Negative values = lower, positive = higher. (**Default**: 1.0) | **YES**  |
 | `AdminFlag`      | The permission flag required for a player to be considered an admin in `{admincount}` and `{adminnames}`. | **YES**  |
 | `SendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
 | `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **YES**   |
@@ -47,6 +49,8 @@ For detailed installation instructions, configuration examples, and advanced usa
 | `excludeFlag` | Users with this flag will not see the message. Set it to `""` so that no players are excluded (default: `""`). | **NO** |
 | `map` | The map where this announce should appear. Use `"all"` to show it on all maps or specify a map name (default: `"all"`). | **NO**   |
 | `interval` | The interval **(in seconds)** between sending this ad. Must be between `10` and `3600` (default: `600`). | **NO** |
+| `positionX` | X position for screen messages. Range: -5.0 to 5.0. If not set, uses `GlobalPositionX`. Only applies to `displayType: "Screen"`. | **NO** |
+| `positionY` | Y position for screen messages. Range: -3.0 to 3.0. If not set, uses `GlobalPositionY`. Only applies to `displayType: "Screen"`. | **NO** |
 | `disableSound` | If `true`, no sound will be played when this ad is sent (default: `false`). | **NO** |
 | `onlyInWarmup` | If `true`, the ad will only be sent during the warmup period (default: `false`).   | **NO** |
 | `onlySpec` | If `true`, this ad will only be sent to players on the spectator team (default: `false`). | **NO** |

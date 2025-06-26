@@ -12,6 +12,13 @@ public static class Constants
     public const string RootPermission = "@css/root";
     public const string VipPermission = "@css/vip";
 
+    public const float MaxPositionX = 5.0f;
+    public const float MinPositionX = -5.0f;
+    public const float MaxPositionY = 3.0f;
+    public const float MinPositionY = -3.0f;
+    public const float DefaultPositionX = -1.5f;
+    public const float DefaultPositionY = 1f;
+
     public static class ErrorMessages
     {
         public const string CountryCodeError = "CC Error";

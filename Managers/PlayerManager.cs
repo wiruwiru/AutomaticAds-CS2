@@ -234,13 +234,10 @@ public class PlayerManager
 
     public void SendMessageToPlayer(CCSPlayerController player, string message)
     {
-        if (player.IsValidPlayer() && !string.IsNullOrWhiteSpace(message))
-        {
-            player.PrintToChat(message);
-        }
+        SendMessageToPlayer(player, message, DisplayType.Chat);
     }
 
-    public void SendMessageToPlayer(CCSPlayerController player, string message, DisplayType displayType)
+    public void SendMessageToPlayer(CCSPlayerController player, string message, DisplayType displayType, float? positionX = null, float? positionY = null)
     {
         if (!player.IsValidPlayer() || string.IsNullOrWhiteSpace(message))
             return;
@@ -263,7 +260,14 @@ public class PlayerManager
                     case DisplayType.Screen:
                         if (player.PawnIsAlive)
                         {
-                            _screenTextService?.ShowTextOnScreen(player, message);
+                            if (positionX.HasValue && positionY.HasValue)
+                            {
+                                _screenTextService?.ShowTextOnScreen(player, message, positionX.Value, positionY.Value);
+                            }
+                            else
+                            {
+                                _screenTextService?.ShowTextOnScreen(player, message);
+                            }
                         }
                         break;
                     default:

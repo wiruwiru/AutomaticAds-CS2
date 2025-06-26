@@ -22,12 +22,15 @@ public class WelcomeConfig
     }
 
     [JsonPropertyName("viewFlag")]
-    public string? ViewFlag { get; set; } = "all";
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ViewFlag { get; set; } = null;
 
     [JsonPropertyName("excludeFlag")]
-    public string? ExcludeFlag { get; set; } = "";
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ExcludeFlag { get; set; } = null;
 
     [JsonPropertyName("disableSound")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool DisableSound { get; set; } = false;
 
     public string GetWelcomeMessage(string languageCode = "en")
