@@ -1,9 +1,11 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using System.Collections.Concurrent;
+
 using AutomaticAds.Models;
 using AutomaticAds.Config;
 using AutomaticAds.Utils;
-using System.Collections.Concurrent;
+using AutomaticAds.Services;
 
 namespace AutomaticAds.Managers;
 
@@ -12,10 +14,16 @@ public class PlayerManager
     private readonly AutomaticAdsBase? _plugin;
     private readonly ConcurrentDictionary<ulong, PlayerInfo> _playerInfoCache = new();
     private readonly ConcurrentDictionary<ulong, DateTime> _cacheTimestamps = new();
+    private ScreenTextService? _screenTextService;
 
     public PlayerManager(AutomaticAdsBase? plugin = null)
     {
         _plugin = plugin;
+    }
+
+    public void SetScreenTextService(ScreenTextService screenTextService)
+    {
+        _screenTextService = screenTextService;
     }
 
     public List<CCSPlayerController> GetValidPlayers()
@@ -160,6 +168,7 @@ public class PlayerManager
             ulong steamId = player.SteamID;
             _playerInfoCache.TryRemove(steamId, out _);
             _cacheTimestamps.TryRemove(steamId, out _);
+            _screenTextService?.OnPlayerDisconnect(player);
         }
         catch (Exception ex)
         {
@@ -171,6 +180,7 @@ public class PlayerManager
     {
         _playerInfoCache.Clear();
         _cacheTimestamps.Clear();
+        _screenTextService?.ClearAllPlayerTexts();
     }
 
     public void CleanupOldCacheEntries(TimeSpan maxAge)
@@ -224,13 +234,10 @@ public class PlayerManager
 
     public void SendMessageToPlayer(CCSPlayerController player, string message)
     {
-        if (player.IsValidPlayer() && !string.IsNullOrWhiteSpace(message))
-        {
-            player.PrintToChat(message);
-        }
+        SendMessageToPlayer(player, message, DisplayType.Chat);
     }
 
-    public void SendMessageToPlayer(CCSPlayerController player, string message, DisplayType displayType)
+    public void SendMessageToPlayer(CCSPlayerController player, string message, DisplayType displayType, float? positionX = null, float? positionY = null)
     {
         if (!player.IsValidPlayer() || string.IsNullOrWhiteSpace(message))
             return;
@@ -249,6 +256,19 @@ public class PlayerManager
                         break;
                     case DisplayType.CenterHtml:
                         _plugin?.StartCenterHtmlMessage(player, message);
+                        break;
+                    case DisplayType.Screen:
+                        if (player.PawnIsAlive)
+                        {
+                            if (positionX.HasValue && positionY.HasValue)
+                            {
+                                _screenTextService?.ShowTextOnScreen(player, message, positionX.Value, positionY.Value);
+                            }
+                            else
+                            {
+                                _screenTextService?.ShowTextOnScreen(player, message);
+                            }
+                        }
                         break;
                     default:
                         player.PrintToChat(message);

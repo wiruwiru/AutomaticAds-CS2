@@ -2,6 +2,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Timers;
+
 using AutomaticAds.Config;
 using AutomaticAds.Config.Models;
 using AutomaticAds.Managers;
@@ -204,7 +205,16 @@ public class AdService
         {
             AdType.OnDead => validPlayers.Where(p => !p.PawnIsAlive && p.Team != CsTeam.Spectator).ToList(),
             AdType.Spectator => validPlayers.Where(p => p.Team == CsTeam.Spectator).ToList(),
-            _ => validPlayers
+            _ => FilterPlayersForDisplayType(validPlayers, ad.DisplayType)
+        };
+    }
+
+    private List<CCSPlayerController> FilterPlayersForDisplayType(List<CCSPlayerController> players, DisplayType displayType)
+    {
+        return displayType switch
+        {
+            DisplayType.Screen => players,
+            _ => players
         };
     }
 
@@ -383,7 +393,7 @@ public class AdService
             message = message.Substring(0, 47) + "...";
         }
 
-        return $"'{message}' (Interval: {ad.Interval}s)";
+        return $"'{message}' (Interval: {ad.Interval}s, DisplayType: {ad.DisplayType})";
     }
 
     private void SendAdToPlayer(CCSPlayerController player, AdConfig ad)
@@ -427,7 +437,22 @@ public class AdService
                         return;
                     }
 
-                    _playerManager.SendMessageToPlayer(player, formattedMessage, ad.DisplayType);
+                    DisplayType effectiveDisplayType = ad.DisplayType;
+                    if (ad.DisplayType == DisplayType.Screen && !player.PawnIsAlive)
+                    {
+                        effectiveDisplayType = DisplayType.Chat;
+                    }
+
+                    if (effectiveDisplayType == DisplayType.Screen)
+                    {
+                        float positionX = ad.GetEffectivePositionX(_config.GlobalPositionX);
+                        float positionY = ad.GetEffectivePositionY(_config.GlobalPositionY);
+                        _playerManager.SendMessageToPlayer(player, formattedMessage, effectiveDisplayType, positionX, positionY);
+                    }
+                    else
+                    {
+                        _playerManager.SendMessageToPlayer(player, formattedMessage, effectiveDisplayType);
+                    }
 
                     string soundToPlay = ad.PlaySoundName ?? _config.GlobalPlaySound ?? string.Empty;
                     if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))

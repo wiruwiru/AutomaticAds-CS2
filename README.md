@@ -25,12 +25,15 @@ For detailed installation instructions, configuration examples, and advanced usa
 | `ChatPrefix`         | The prefix displayed in the chat before each announcement. Supports colors. To use it, include `{prefix}` inside the `message` field in the ads configuration.                        | **YES**  |
 | `GlobalPlaySound`      | Sound that is played when an announcement is sent in case `playSoundName` is not set in the announcement and `disableSound` is not `true`. Leave it blank to disable it.                             | **YES**  |
 | `GlobalInterval` | Default interval (in seconds) between announcements if no individual interval is set in the ad configuration. (**Default**: 30s) | **YES**  |
+| `GlobalPositionX` | Default X position for screen messages. Range: -5.0 to 5.0. Negative values = left, positive = right. (**Default**: -1.8) | **YES**  |
+| `GlobalPositionY` | Default Y position for screen messages. Range: -3.0 to 3.0. Negative values = lower, positive = higher. (**Default**: 1.0) | **YES**  |
 | `AdminFlag`      | The permission flag required for a player to be considered an admin in `{admincount}` and `{adminnames}`. | **YES**  |
 | `SendAdsInOrder`     | Send announcements in an orderly manner, respecting the intervals.                                | **YES**  |
 | `UseWelcomeMessage`  | Set to `true` to enable the welcome message. Set to `false` to disable it.                        | **YES**   |
 | `JoinLeaveMessages`  | Set `true` to enable custom connection and disconnection messages. Set `false` to disable it.                        | **YES**   |
 | `WelcomeDelay`  | This is the time the plugin will wait to send the welcome message after the player connects (**Default**: 3s).                        | **YES**   |
 | `CenterHtmlDisplayTime`  | Duration (in seconds) that ads with `displayType` set to `CenterHtml` will remain visible. (**Default**: 5s) | **YES**   |
+| `ScreenDisplayTime`  | Duration (in seconds) that ads with `displayType` set to `Screen` will remain visible. (**Default**: 5s) | **YES**   |
 | `UseMultiLang` | Enables support for multiple languages in messages. When `true`, the plugin will attempt to use the player's language if available. (**Default**: `true`) | **YES**  |
 | `DefaultLanguage` | Language used as a fallback when no localized message is found for a player. (**Default**: `en`) | **YES**  |
 | `Welcome`     | Configuration for the welcome announcement. Supports variables. | **NO**   |
@@ -46,6 +49,8 @@ For detailed installation instructions, configuration examples, and advanced usa
 | `excludeFlag` | Users with this flag will not see the message. Set it to `""` so that no players are excluded (default: `""`). | **NO** |
 | `map` | The map where this announce should appear. Use `"all"` to show it on all maps or specify a map name (default: `"all"`). | **NO**   |
 | `interval` | The interval **(in seconds)** between sending this ad. Must be between `10` and `3600` (default: `600`). | **NO** |
+| `positionX` | X position for screen messages. Range: -5.0 to 5.0. If not set, uses `GlobalPositionX`. Only applies to `displayType: "Screen"`. | **NO** |
+| `positionY` | Y position for screen messages. Range: -3.0 to 3.0. If not set, uses `GlobalPositionY`. Only applies to `displayType: "Screen"`. | **NO** |
 | `disableSound` | If `true`, no sound will be played when this ad is sent (default: `false`). | **NO** |
 | `onlyInWarmup` | If `true`, the ad will only be sent during the warmup period (default: `false`).   | **NO** |
 | `onlySpec` | If `true`, this ad will only be sent to players on the spectator team (default: `false`). | **NO** |
@@ -54,7 +59,7 @@ For detailed installation instructions, configuration examples, and advanced usa
 | `disableInterval` | If `true`, this ad will not be sent automatically. It will only be sent manually via `triggerAd` commands (default: `false`). | **NO** |
 | `disableOrder` | If `true`, this ad will ignore the sequential sending order when `sendAdsInOrder` is enabled (default: `false`). | **NO** |
 | `playSoundName` | The specific sound to play when this announcement is sent. If not set, `GlobalPlaySound` will be used if set, provided `disableSound` is not `true`. | **NO** |
-| `displayType` | Controls how the message is displayed. Options: `"Chat"` (default, normal chat message), `"Center"` (center screen text), `"CenterHtml"` (center screen with HTML formatting support). | **NO** |
+| `displayType` | Controls how the message is displayed. Options: `"Chat"` (default, normal chat message), `"Center"` (center screen text), `"CenterHtml"` (center screen with HTML formatting support), `"Screen"` (floating text on the player's screen). | **NO** |
 
 ### Available Colors
 `GREEN`, `RED`, `YELLOW`, `BLUE`, `ORANGE`, `WHITE`, `PURPLE`, `GREY`, `LIGHT_RED`, `LIGHT_BLUE`, `LIGHT_YELLOW`, `LIGHT_PURPLE`, `DARK_RED`, `BLUE_GREY`, `DARK_BLUE`, `LIME`, `OLIVE`, `GOLD`, `SILVER`, `MAGENTA`.

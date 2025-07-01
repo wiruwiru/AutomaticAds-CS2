@@ -32,23 +32,28 @@ public static class Extensions
 
     public static bool CanViewMessage(this CCSPlayerController player, string? viewFlag, string? excludeFlag)
     {
-        bool canView = player.HasPermission(viewFlag);
-        bool isExcluded = !string.IsNullOrWhiteSpace(excludeFlag) && player.HasPermission(excludeFlag);
+        string effectiveViewFlag = viewFlag ?? Constants.AllPlayersFlag;
+        string effectiveExcludeFlag = excludeFlag ?? string.Empty;
+
+        bool canView = player.HasPermission(effectiveViewFlag);
+        bool isExcluded = !string.IsNullOrWhiteSpace(effectiveExcludeFlag) && player.HasPermission(effectiveExcludeFlag);
 
         return canView && !isExcluded;
     }
 
-    public static bool MapMatches(this string currentMap, string configMap)
+    public static bool MapMatches(this string currentMap, string? configMap)
     {
-        if (configMap == Constants.AllMapsKeyword)
+        string effectiveMap = configMap ?? Constants.AllMapsKeyword;
+
+        if (effectiveMap == Constants.AllMapsKeyword)
             return true;
 
-        if (configMap.EndsWith("*"))
+        if (effectiveMap.EndsWith("*"))
         {
-            string mapPrefix = configMap.Replace("*", "");
+            string mapPrefix = effectiveMap.Replace("*", "");
             return currentMap.StartsWith(mapPrefix);
         }
 
-        return currentMap.Equals(configMap, StringComparison.OrdinalIgnoreCase);
+        return currentMap.Equals(effectiveMap, StringComparison.OrdinalIgnoreCase);
     }
 }

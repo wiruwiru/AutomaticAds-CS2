@@ -15,6 +15,12 @@ public class BaseConfigs : BasePluginConfig
     [JsonPropertyName("GlobalInterval")]
     public float GlobalInterval { get; set; } = 30.0f;
 
+    [JsonPropertyName("GlobalPositionX")]
+    public float GlobalPositionX { get; set; } = -1.5f;
+
+    [JsonPropertyName("GlobalPositionY")]
+    public float GlobalPositionY { get; set; } = 1f;
+
     [JsonPropertyName("AdminFlag")]
     public string? AdminFlag { get; set; } = "@css/generic";
 
@@ -32,6 +38,9 @@ public class BaseConfigs : BasePluginConfig
 
     [JsonPropertyName("CenterHtmlDisplayTime")]
     public float centerHtmlDisplayTime { get; set; } = 5.0f;
+
+    [JsonPropertyName("ScreenDisplayTime")]
+    public float ScreenDisplayTime { get; set; } = 5.0f;
 
     [JsonPropertyName("UseMultiLang")]
     public bool UseMultiLang { get; set; } = true;
@@ -106,6 +115,12 @@ public class BaseConfigs : BasePluginConfig
             ViewFlag = "@css/generic",
             DisplayType = DisplayType.CenterHtml,
             onDead = true
+        },
+        new AdConfig
+        {
+            Message = "Thanks for playing {playername}",
+            DisplayType = DisplayType.Screen,
+            DisableSound = true
         }
     };
 }

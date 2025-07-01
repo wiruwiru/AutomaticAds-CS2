@@ -3,6 +3,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
+
 using AutomaticAds.Config;
 using AutomaticAds.Config.Models;
 using AutomaticAds.Services;
@@ -11,11 +12,11 @@ using AutomaticAds.Utils;
 
 namespace AutomaticAds;
 
-[MinimumApiVersion(290)]
+[MinimumApiVersion(315)]
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.2.6";
+    public override string ModuleVersion => "1.2.7";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "Send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -24,6 +25,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     private WelcomeService? _welcomeService;
     private JoinLeaveService? _joinLeaveService;
     private IIPQueryService? _ipQueryService;
+    private ScreenTextService? _screenTextService;
     private TimerManager? _timerManager;
     private PlayerManager? _playerManager;
     private MessageFormatter? _messageFormatter;
@@ -70,6 +72,8 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         _timerManager = new TimerManager(this);
         _playerManager = new PlayerManager(this);
         _ipQueryService = new IPQueryService();
+        _screenTextService = new ScreenTextService(_timerManager, Config.ScreenDisplayTime);
+        _playerManager.SetScreenTextService(_screenTextService);
 
         _adService = new AdService(Config, _messageFormatter, _timerManager, _playerManager, _ipQueryService);
         _welcomeService = new WelcomeService(Config, _messageFormatter, _timerManager, _playerManager);
@@ -99,6 +103,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerFullConnect);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnectPre, HookMode.Pre);
+        RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPost, HookMode.Post);
     }
 
     private void RegisterCommands()
@@ -180,7 +185,22 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
                 if (!string.IsNullOrWhiteSpace(formattedMessage))
                 {
-                    _playerManager!.SendMessageToPlayer(player!, formattedMessage, ad.DisplayType);
+                    DisplayType effectiveDisplayType = ad.DisplayType;
+                    if (ad.DisplayType == DisplayType.Screen && !player!.PawnIsAlive)
+                    {
+                        effectiveDisplayType = DisplayType.Chat;
+                    }
+
+                    if (effectiveDisplayType == DisplayType.Screen)
+                    {
+                        float positionX = ad.GetEffectivePositionX(Config.GlobalPositionX);
+                        float positionY = ad.GetEffectivePositionY(Config.GlobalPositionY);
+                        _playerManager!.SendMessageToPlayer(player!, formattedMessage, effectiveDisplayType, positionX, positionY);
+                    }
+                    else
+                    {
+                        _playerManager!.SendMessageToPlayer(player!, formattedMessage, effectiveDisplayType);
+                    }
 
                     string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
                     if (!ad.DisableSound && !string.IsNullOrWhiteSpace(soundToPlay))
@@ -385,6 +405,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         _joinLeaveService?.HandlePlayerLeave(player!);
         _welcomeService?.OnPlayerDisconnect(player!);
         _joinLeaveService?.OnPlayerDisconnect(player!);
+        _screenTextService?.OnPlayerDisconnect(player!);
 
         return HookResult.Continue;
     }
@@ -400,9 +421,21 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         return HookResult.Continue;
     }
 
+    [GameEventHandler(HookMode.Post)]
+    public HookResult OnPlayerDeathPost(EventPlayerDeath gameEvent, GameEventInfo info)
+    {
+        var player = gameEvent.Userid;
+        if (!player.IsValidPlayer())
+            return HookResult.Continue;
+
+        _screenTextService?.HideTextFromScreen(player!);
+        return HookResult.Continue;
+    }
+
     public override void Unload(bool hotReload)
     {
         _timerManager?.KillAllTimers();
+        _screenTextService?.ClearAllPlayerTexts();
         RemoveListener<Listeners.OnTick>(OnTick);
     }
 }
