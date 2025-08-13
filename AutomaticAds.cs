@@ -12,11 +12,11 @@ using AutomaticAds.Utils;
 
 namespace AutomaticAds;
 
-[MinimumApiVersion(315)]
+[MinimumApiVersion(333)]
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.2.7";
+    public override string ModuleVersion => "1.2.8";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "Send automatic messages to the chat and play a sound alert for users to see the message.";
 
