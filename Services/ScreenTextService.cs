@@ -1,6 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Utils;
 using System.Drawing;
 
@@ -10,12 +9,10 @@ namespace AutomaticAds.Services;
 
 public class ScreenTextService
 {
-    // INFO: Disabled by patch 19388062, which removed CCSGOViewModel.
-    // private readonly Dictionary<CCSPlayerController, CPointWorldText> _playerTexts = new();
-    private readonly Dictionary<CCSPlayerController, object> _playerTexts = new();
+    private readonly Dictionary<CCSPlayerController, CPointWorldText> _playerTexts = new();
+    private readonly Dictionary<CCSPlayerController, CPointOrient> _playerAnchors = new();
     private readonly TimerManager _timerManager;
     private readonly float _displayTime;
-    private const bool SCREEN_TEXT_DISABLED = true;
 
     public float PositionX { get; set; } = -1.5f;
     public float PositionY { get; set; } = 1f;
@@ -39,115 +36,113 @@ public class ScreenTextService
 
     public void ShowTextOnScreen(CCSPlayerController player, string text, float positionX, float positionY)
     {
-        if (SCREEN_TEXT_DISABLED)
+        if (!player.IsValid || !player.PawnIsAlive)
+            return;
+
+        HideTextFromScreen(player);
+
+        var anchorEntity = EnsurePlayerAnchor(player);
+        if (anchorEntity == null)
         {
-            Console.WriteLine($"[AutomaticAds] Screen text is temporarily disabled. Text would have been: {text}");
+            Console.WriteLine($"[AutomaticAds] Error: Could not create or get anchor entity for {player.PlayerName}");
             return;
         }
 
-        // INFO: Disabled by patch 19388062, which removed CCSGOViewModel.
-        // if (!player.IsValid || !player.PawnIsAlive)
-        //     return;
+        var vectorData = CalculateTextPosition(player, positionX, positionY);
+        if (!vectorData.HasValue)
+        {
+            Console.WriteLine($"[AutomaticAds] Error: Could not calculate position for {player.PlayerName}");
+            return;
+        }
 
-        // HideTextFromScreen(player);
+        var textEntity = CreateWorldTextEntity(
+            text: text,
+            fontSize: 25,
+            color: Color.Yellow,
+            fontName: "Tahoma Bold",
+            position: vectorData.Value.Position,
+            angle: vectorData.Value.Angle,
+            parentEntity: anchorEntity,
+            depthOffset: 0.0f
+        );
 
-        // var viewModel = EnsureCustomViewModel(player);
-        // if (viewModel == null)
-        // {
-        //     Console.WriteLine($"[AutomaticAds] Error: Could not create ViewModel for {player.PlayerName}");
-        //     return;
-        // }
-
-        // var vectorData = CalculateTextPosition(player, positionX, positionY);
-        // if (!vectorData.HasValue)
-        // {
-        //     Console.WriteLine($"[AutomaticAds] Error: Could not calculate position for {player.PlayerName}");
-        //     return;
-        // }
-
-        // var textEntity = CreateWorldTextEntity(
-        //     text: text,
-        //     fontSize: 25,
-        //     color: Color.Yellow,
-        //     fontName: "Tahoma Bold",
-        //     position: vectorData.Value.Position,
-        //     angle: vectorData.Value.Angle,
-        //     viewModel: viewModel,
-        //     depthOffset: 0.0f
-        // );
-
-        // if (textEntity != null)
-        // {
-        //     _playerTexts[player] = textEntity;
-        //     _timerManager.AddTimer(_displayTime, () => HideTextFromScreen(player));
-        // }
+        if (textEntity != null)
+        {
+            _playerTexts[player] = textEntity;
+            _timerManager.AddTimer(_displayTime, () => HideTextFromScreen(player));
+        }
     }
 
     public void HideTextFromScreen(CCSPlayerController player)
     {
         if (_playerTexts.TryGetValue(player, out var textEntity))
         {
-            // INFO: Disabled by patch 19388062, which removed CCSGOViewModel.
-            // if (textEntity?.IsValid == true)
-            //     textEntity.Remove();
+            if (textEntity?.IsValid == true)
+                textEntity.Remove();
             _playerTexts.Remove(player);
         }
     }
 
     public void ClearAllPlayerTexts()
     {
-        if (SCREEN_TEXT_DISABLED)
+        foreach (var textEntity in _playerTexts.Values)
         {
-            _playerTexts.Clear();
-            return;
+            if (textEntity?.IsValid == true)
+                textEntity.Remove();
         }
+        _playerTexts.Clear();
 
-        // INFO: Disabled by patch 19388062, which removed CCSGOViewModel.
-        // foreach (var textEntity in _playerTexts.Values)
-        // {
-        //     if (textEntity?.IsValid == true)
-        //         textEntity.Remove();
-        // }
-        // _playerTexts.Clear();
+        foreach (var anchorEntity in _playerAnchors.Values)
+        {
+            if (anchorEntity?.IsValid == true)
+                anchorEntity.Remove();
+        }
+        _playerAnchors.Clear();
     }
 
     public void OnPlayerDisconnect(CCSPlayerController player)
     {
         HideTextFromScreen(player);
+
+        if (_playerAnchors.TryGetValue(player, out var anchorEntity))
+        {
+            if (anchorEntity?.IsValid == true)
+                anchorEntity.Remove();
+            _playerAnchors.Remove(player);
+        }
     }
 
-    // INFO: Disabled by patch 19388062, which removed CCSGOViewModel.
-    // private CCSGOViewModel? EnsureCustomViewModel(CCSPlayerController player)
-    // {
-    //     var pawn = GetPlayerPawn(player);
-    //     if (pawn?.ViewModelServices == null) return null;
+    private CPointOrient? EnsurePlayerAnchor(CCSPlayerController player)
+    {
+        if (_playerAnchors.TryGetValue(player, out var anchor) && anchor.IsValid)
+        {
+            return anchor;
+        }
 
-    //     try
-    //     {
-    //         int offset = Schema.GetSchemaOffset("CCSPlayer_ViewModelServices", "m_hViewModel");
-    //         IntPtr viewModelHandleAddress = pawn.ViewModelServices.Handle + offset + 4;
+        var pawn = GetPlayerPawn(player);
+        if (pawn == null) return null;
 
-    //         var handle = new CHandle<CCSGOViewModel>(viewModelHandleAddress);
+        try
+        {
+            var newAnchor = Utilities.CreateEntityByName<CPointOrient>("point_orient");
+            if (newAnchor == null || !newAnchor.IsValid)
+            {
+                Console.WriteLine($"[AutomaticAds] Error: Could not create CPointOrient for {player.PlayerName}");
+                return null;
+            }
 
-    //         if (!handle.IsValid)
-    //         {
-    //             var viewModel = Utilities.CreateEntityByName<CCSGOViewModel>("predicted_viewmodel");
-    //             if (viewModel != null)
-    //             {
-    //                 viewModel.DispatchSpawn();
-    //                 handle.Raw = viewModel.EntityHandle.Raw;
-    //                 Utilities.SetStateChanged(pawn, "CCSPlayerPawnBase", "m_pViewModelServices");
-    //             }
-    //         }
+            newAnchor.DispatchSpawn();
+            newAnchor.AcceptInput("SetParent", pawn, null, "!activator");
 
-    //         return handle.Value;
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"[AutomaticAds] Error creating ViewModel: {ex.Message}");
-    //         return null;
-    //     }
-    // }
+            _playerAnchors[player] = newAnchor;
+            return newAnchor;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error creating anchor entity for {player.PlayerName}: {ex.Message}");
+            return null;
+        }
+    }
 
     private CCSPlayerPawn? GetPlayerPawn(CCSPlayerController player)
     {
@@ -169,11 +164,6 @@ public class ScreenTextService
     }
 
     public readonly record struct VectorData(Vector Position, QAngle Angle);
-
-    private VectorData? CalculateTextPosition(CCSPlayerController player)
-    {
-        return CalculateTextPosition(player, PositionX, PositionY);
-    }
 
     private VectorData? CalculateTextPosition(CCSPlayerController player, float positionX, float positionY)
     {
@@ -220,44 +210,44 @@ public class ScreenTextService
         return (x * scaleFactor, y * scaleFactor);
     }
 
-    // private CPointWorldText? CreateWorldTextEntity(string text, int fontSize, Color color, string fontName, Vector position, QAngle angle, CCSGOViewModel viewModel, float depthOffset = 0.1f)
-    // {
-    //     try
-    //     {
-    //         var entity = Utilities.CreateEntityByName<CPointWorldText>("point_worldtext");
-    //         if (entity == null || !entity.IsValid) return null;
+    private CPointWorldText? CreateWorldTextEntity(string text, int fontSize, Color color, string fontName, Vector position, QAngle angle, CPointOrient parentEntity, float depthOffset = 0.1f)
+    {
+        try
+        {
+            var entity = Utilities.CreateEntityByName<CPointWorldText>("point_worldtext");
+            if (entity == null || !entity.IsValid) return null;
 
-    //         entity.MessageText = text;
-    //         entity.Enabled = true;
-    //         entity.FontSize = fontSize;
-    //         entity.FontName = fontName;
-    //         entity.Fullbright = true;
-    //         entity.Color = color;
+            entity.MessageText = text;
+            entity.Enabled = true;
+            entity.FontSize = fontSize;
+            entity.FontName = fontName;
+            entity.Fullbright = true;
+            entity.Color = color;
 
-    //         entity.WorldUnitsPerPx = 0.0085f;
-    //         entity.BackgroundWorldToUV = 0.01f;
-    //         entity.JustifyHorizontal = PointWorldTextJustifyHorizontal_t.POINT_WORLD_TEXT_JUSTIFY_HORIZONTAL_LEFT;
-    //         entity.JustifyVertical = PointWorldTextJustifyVertical_t.POINT_WORLD_TEXT_JUSTIFY_VERTICAL_CENTER;
-    //         entity.ReorientMode = PointWorldTextReorientMode_t.POINT_WORLD_TEXT_REORIENT_NONE;
-    //         entity.RenderMode = RenderMode_t.kRenderNormal;
+            entity.WorldUnitsPerPx = 0.0085f;
+            entity.BackgroundWorldToUV = 0.01f;
+            entity.JustifyHorizontal = PointWorldTextJustifyHorizontal_t.POINT_WORLD_TEXT_JUSTIFY_HORIZONTAL_LEFT;
+            entity.JustifyVertical = PointWorldTextJustifyVertical_t.POINT_WORLD_TEXT_JUSTIFY_VERTICAL_CENTER;
+            entity.ReorientMode = PointWorldTextReorientMode_t.POINT_WORLD_TEXT_REORIENT_NONE;
+            entity.RenderMode = RenderMode_t.kRenderNormal;
 
-    //         entity.DrawBackground = true;
-    //         entity.BackgroundBorderHeight = 0.1f;
-    //         entity.BackgroundBorderWidth = 0.1f;
+            entity.DrawBackground = true;
+            entity.BackgroundBorderHeight = 0.1f;
+            entity.BackgroundBorderWidth = 0.1f;
 
-    //         entity.DepthOffset = depthOffset;
+            entity.DepthOffset = depthOffset;
 
-    //         entity.DispatchSpawn();
-    //         entity.Teleport(position, angle, null);
+            entity.DispatchSpawn();
+            entity.Teleport(position, angle, null);
 
-    //         entity.AcceptInput("SetParent", viewModel, null, "!activator");
+            entity.AcceptInput("SetParent", parentEntity, null, "!activator");
 
-    //         return entity;
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"[AutomaticAds] Error creating text entity: {ex.Message}");
-    //         return null;
-    //     }
-    // }
+            return entity;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutomaticAds] Error creating text entity: {ex.Message}");
+            return null;
+        }
+    }
 }

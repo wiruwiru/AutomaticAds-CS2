@@ -15,7 +15,6 @@ public class PlayerManager
     private readonly ConcurrentDictionary<ulong, PlayerInfo> _playerInfoCache = new();
     private readonly ConcurrentDictionary<ulong, DateTime> _cacheTimestamps = new();
     private ScreenTextService? _screenTextService;
-    private const bool SCREEN_TEXT_DISABLED = true;
 
     public PlayerManager(AutomaticAdsBase? plugin = null)
     {
@@ -247,14 +246,7 @@ public class PlayerManager
         {
             try
             {
-                DisplayType effectiveDisplayType = displayType;
-                if (displayType == DisplayType.Screen && SCREEN_TEXT_DISABLED)
-                {
-                    effectiveDisplayType = DisplayType.Chat;
-                    Console.WriteLine($"[AutomaticAds] Screen display disabled, falling back to chat for: {message}");
-                }
-
-                switch (effectiveDisplayType)
+                switch (displayType)
                 {
                     case DisplayType.Chat:
                         player.PrintToChat(message);
@@ -266,7 +258,7 @@ public class PlayerManager
                         _plugin?.StartCenterHtmlMessage(player, message);
                         break;
                     case DisplayType.Screen:
-                        if (player.PawnIsAlive && !SCREEN_TEXT_DISABLED)
+                        if (player.PawnIsAlive)
                         {
                             if (positionX.HasValue && positionY.HasValue)
                             {
@@ -277,10 +269,6 @@ public class PlayerManager
                                 _screenTextService?.ShowTextOnScreen(player, message);
                             }
                         }
-                        else
-                        {
-                            player.PrintToChat(message);
-                        }
                         break;
                     default:
                         player.PrintToChat(message);
@@ -290,14 +278,6 @@ public class PlayerManager
             catch (Exception ex)
             {
                 Console.WriteLine($"[AutomaticAds] Error sending message to player: {ex.Message}");
-                try
-                {
-                    player.PrintToChat(message);
-                }
-                catch
-                {
-                    Console.WriteLine($"[AutomaticAds] Complete failure sending message to {player.PlayerName}");
-                }
             }
         });
     }
