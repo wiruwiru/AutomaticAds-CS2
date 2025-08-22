@@ -1,6 +1,5 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Utils;
 using System.Drawing;
 
@@ -11,6 +10,7 @@ namespace AutomaticAds.Services;
 public class ScreenTextService
 {
     private readonly Dictionary<CCSPlayerController, CPointWorldText> _playerTexts = new();
+    private readonly Dictionary<CCSPlayerController, CPointOrient> _playerAnchors = new();
     private readonly TimerManager _timerManager;
     private readonly float _displayTime;
 
@@ -41,10 +41,10 @@ public class ScreenTextService
 
         HideTextFromScreen(player);
 
-        var viewModel = EnsureCustomViewModel(player);
-        if (viewModel == null)
+        var anchorEntity = EnsurePlayerAnchor(player);
+        if (anchorEntity == null)
         {
-            Console.WriteLine($"[AutomaticAds] Error: Could not create ViewModel for {player.PlayerName}");
+            Console.WriteLine($"[AutomaticAds] Error: Could not create or get anchor entity for {player.PlayerName}");
             return;
         }
 
@@ -62,7 +62,7 @@ public class ScreenTextService
             fontName: "Tahoma Bold",
             position: vectorData.Value.Position,
             angle: vectorData.Value.Angle,
-            viewModel: viewModel,
+            parentEntity: anchorEntity,
             depthOffset: 0.0f
         );
 
@@ -91,41 +91,55 @@ public class ScreenTextService
                 textEntity.Remove();
         }
         _playerTexts.Clear();
+
+        foreach (var anchorEntity in _playerAnchors.Values)
+        {
+            if (anchorEntity?.IsValid == true)
+                anchorEntity.Remove();
+        }
+        _playerAnchors.Clear();
     }
 
     public void OnPlayerDisconnect(CCSPlayerController player)
     {
         HideTextFromScreen(player);
+
+        if (_playerAnchors.TryGetValue(player, out var anchorEntity))
+        {
+            if (anchorEntity?.IsValid == true)
+                anchorEntity.Remove();
+            _playerAnchors.Remove(player);
+        }
     }
 
-    private CCSGOViewModel? EnsureCustomViewModel(CCSPlayerController player)
+    private CPointOrient? EnsurePlayerAnchor(CCSPlayerController player)
     {
+        if (_playerAnchors.TryGetValue(player, out var anchor) && anchor.IsValid)
+        {
+            return anchor;
+        }
+
         var pawn = GetPlayerPawn(player);
-        if (pawn?.ViewModelServices == null) return null;
+        if (pawn == null) return null;
 
         try
         {
-            int offset = Schema.GetSchemaOffset("CCSPlayer_ViewModelServices", "m_hViewModel");
-            IntPtr viewModelHandleAddress = pawn.ViewModelServices.Handle + offset + 4;
-
-            var handle = new CHandle<CCSGOViewModel>(viewModelHandleAddress);
-
-            if (!handle.IsValid)
+            var newAnchor = Utilities.CreateEntityByName<CPointOrient>("point_orient");
+            if (newAnchor == null || !newAnchor.IsValid)
             {
-                var viewModel = Utilities.CreateEntityByName<CCSGOViewModel>("predicted_viewmodel");
-                if (viewModel != null)
-                {
-                    viewModel.DispatchSpawn();
-                    handle.Raw = viewModel.EntityHandle.Raw;
-                    Utilities.SetStateChanged(pawn, "CCSPlayerPawnBase", "m_pViewModelServices");
-                }
+                Console.WriteLine($"[AutomaticAds] Error: Could not create CPointOrient for {player.PlayerName}");
+                return null;
             }
 
-            return handle.Value;
+            newAnchor.DispatchSpawn();
+            newAnchor.AcceptInput("SetParent", pawn, null, "!activator");
+
+            _playerAnchors[player] = newAnchor;
+            return newAnchor;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error creating ViewModel: {ex.Message}");
+            Console.WriteLine($"[AutomaticAds] Error creating anchor entity for {player.PlayerName}: {ex.Message}");
             return null;
         }
     }
@@ -150,11 +164,6 @@ public class ScreenTextService
     }
 
     public readonly record struct VectorData(Vector Position, QAngle Angle);
-
-    private VectorData? CalculateTextPosition(CCSPlayerController player)
-    {
-        return CalculateTextPosition(player, PositionX, PositionY);
-    }
 
     private VectorData? CalculateTextPosition(CCSPlayerController player, float positionX, float positionY)
     {
@@ -201,15 +210,7 @@ public class ScreenTextService
         return (x * scaleFactor, y * scaleFactor);
     }
 
-    private CPointWorldText? CreateWorldTextEntity(
-        string text,
-        int fontSize,
-        Color color,
-        string fontName,
-        Vector position,
-        QAngle angle,
-        CCSGOViewModel viewModel,
-        float depthOffset = 0.1f)
+    private CPointWorldText? CreateWorldTextEntity(string text, int fontSize, Color color, string fontName, Vector position, QAngle angle, CPointOrient parentEntity, float depthOffset = 0.1f)
     {
         try
         {
@@ -239,7 +240,7 @@ public class ScreenTextService
             entity.DispatchSpawn();
             entity.Teleport(position, angle, null);
 
-            entity.AcceptInput("SetParent", viewModel, null, "!activator");
+            entity.AcceptInput("SetParent", parentEntity, null, "!activator");
 
             return entity;
         }
