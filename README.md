@@ -1,8 +1,8 @@
 # AutomaticAds CS2
 This plugin allows you to schedule and display announcements in the chat at customizable intervals. Each announcement is accompanied by a brief sound effect to capture players' attention seamlessly.
 
-> [!WARNING]
-> After the update on 07/28/2025, ads with displayType “Screen” have stopped working. It is still too early to know if there is a solution or not.
+> [!CAUTION]
+> Ads with `"Screen"` have been re-enabled. However, the current solution does not work as well as it did before the 07/28/2025 update. It is recommended not to use this feature for now, pending a more stable method.
 
 https://github.com/user-attachments/assets/aae16cc4-7c67-477a-8c89-437d5c035211
 
