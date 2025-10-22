@@ -12,11 +12,11 @@ using AutomaticAds.Utils;
 
 namespace AutomaticAds;
 
-[MinimumApiVersion(337)]
+[MinimumApiVersion(342)]
 public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 {
     public override string ModuleName => "AutomaticAds";
-    public override string ModuleVersion => "1.2.8";
+    public override string ModuleVersion => "1.2.9";
     public override string ModuleAuthor => "luca.uy";
     public override string ModuleDescription => "Send automatic messages to the chat and play a sound alert for users to see the message.";
 
@@ -38,6 +38,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     private readonly Dictionary<int, DateTime> _centerHtmlStartTimes = new();
     private readonly Dictionary<int, string> _activeCenterHtmlMessages = new();
     private readonly Dictionary<int, DateTime> _lastCenterHtmlUpdateTimes = new();
+    private readonly Dictionary<int, bool> _centerHtmlIsOnDead = new();
 
     public required BaseConfigs Config { get; set; }
 
@@ -104,6 +105,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnectPre, HookMode.Pre);
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPost, HookMode.Post);
+        RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
     }
 
     private void RegisterCommands()
@@ -199,7 +201,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                     }
                     else
                     {
-                        _playerManager!.SendMessageToPlayer(player!, formattedMessage, effectiveDisplayType);
+                        _playerManager!.SendMessageToPlayer(player!, formattedMessage, effectiveDisplayType, null, null, ad.onDead);
                     }
 
                     string soundToPlay = ad.PlaySoundName ?? Config.GlobalPlaySound ?? string.Empty;
@@ -273,10 +275,11 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             _activeCenterHtmlMessages.Remove(playerId);
             _centerHtmlStartTimes.Remove(playerId);
             _lastCenterHtmlUpdateTimes.Remove(playerId);
+            _centerHtmlIsOnDead.Remove(playerId);
         }
     }
 
-    public void StartCenterHtmlMessage(CCSPlayerController player, string message)
+    public void StartCenterHtmlMessage(CCSPlayerController player, string message, bool isOnDead = false)
     {
         if (!player.IsValid || !player.UserId.HasValue)
             return;
@@ -287,6 +290,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         _activeCenterHtmlMessages[playerId] = message;
         _centerHtmlStartTimes[playerId] = currentTime;
         _lastCenterHtmlUpdateTimes[playerId] = currentTime;
+        _centerHtmlIsOnDead[playerId] = isOnDead;
 
         player.PrintToCenterHtml(message);
     }
@@ -301,6 +305,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         _activeCenterHtmlMessages.Remove(playerId);
         _centerHtmlStartTimes.Remove(playerId);
         _lastCenterHtmlUpdateTimes.Remove(playerId);
+        _centerHtmlIsOnDead.Remove(playerId);
     }
 
     [GameEventHandler]
@@ -429,6 +434,25 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             return HookResult.Continue;
 
         _screenTextService?.HideTextFromScreen(player!);
+        return HookResult.Continue;
+    }
+
+    [GameEventHandler]
+    public HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
+    {
+        var player = @event.Userid;
+        if (!player.IsValidPlayer())
+            return HookResult.Continue;
+
+        if (player!.UserId.HasValue)
+        {
+            int playerId = player.UserId.Value;
+            if (_centerHtmlIsOnDead.TryGetValue(playerId, out bool isOnDead) && isOnDead)
+            {
+                StopCenterHtmlMessage(player);
+            }
+        }
+
         return HookResult.Continue;
     }
 

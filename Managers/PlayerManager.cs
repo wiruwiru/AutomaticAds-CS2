@@ -237,7 +237,7 @@ public class PlayerManager
         SendMessageToPlayer(player, message, DisplayType.Chat);
     }
 
-    public void SendMessageToPlayer(CCSPlayerController player, string message, DisplayType displayType, float? positionX = null, float? positionY = null)
+    public void SendMessageToPlayer(CCSPlayerController player, string message, DisplayType displayType, float? positionX = null, float? positionY = null, bool isOnDead = false)
     {
         if (!player.IsValidPlayer() || string.IsNullOrWhiteSpace(message))
             return;
@@ -255,7 +255,7 @@ public class PlayerManager
                         player.PrintToCenterAlert(message);
                         break;
                     case DisplayType.CenterHtml:
-                        _plugin?.StartCenterHtmlMessage(player, message);
+                        _plugin?.StartCenterHtmlMessage(player, message, isOnDead);
                         break;
                     case DisplayType.Screen:
                         if (player.PawnIsAlive)

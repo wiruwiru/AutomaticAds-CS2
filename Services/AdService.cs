@@ -451,7 +451,7 @@ public class AdService
                     }
                     else
                     {
-                        _playerManager.SendMessageToPlayer(player, formattedMessage, effectiveDisplayType);
+                        _playerManager.SendMessageToPlayer(player, formattedMessage, effectiveDisplayType, null, null, ad.onDead);
                     }
 
                     string soundToPlay = ad.PlaySoundName ?? _config.GlobalPlaySound ?? string.Empty;
