@@ -1,16 +1,12 @@
-name: AutomaticAds BUILD
+name: Plugin builder and release
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
-env:
-  BUILD_NUMBER: ${{ github.run_number }}
-  PROJECT_PATH: "AutomaticAds.csproj"
-  PROJECT_NAME: "AutomaticAds"
-  OUTPUT_PATH: "./AutomaticAds"
+  release:
+    types:
+      - created
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,42 +14,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore
-      run: dotnet restore
-    - name: Build
-      run: dotnet build ${{ env.PROJECT_PATH }} -c Release -o ${{ env.OUTPUT_PATH }}
+      - uses: actions/checkout@v4
 
-  publish:
-    if: github.event_name == 'push'
-    permissions: write-all
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore
-      run: dotnet restore
-    - name: Build
-      run: dotnet build ${{ env.PROJECT_PATH }} -c Release -o ${{ env.OUTPUT_PATH }}
-    - name: Zip
-      run: |
-        cd ${{ env.OUTPUT_PATH }}
-        # Crear el zip con los archivos de la compilación
-        zip -r ../${{ env.PROJECT_NAME }}.zip .
-    - name: AutomaticAds
-      uses: ncipollo/release-action@v1.12.0
-      with:
-        artifacts: "${{ env.PROJECT_NAME }}.zip"
-        name: "AutomaticAds v${{ env.BUILD_NUMBER }}"
-        tag: "build-${{ env.BUILD_NUMBER }}"
-        body: |
-          Place the plugin in **`csgo/addons/counterstrikesharp/plugins/AutomaticAds`**.
-          After the first server startup, the configuration file will be created in **`csgo/addons/counterstrikesharp/configs/plugins/AutomaticAds`**.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      
+      - name: Restore dependencies
+        run: dotnet restore
+      
+      - name: Build
+        run: dotnet build AutomaticAds.csproj -c Release -o ./AutomaticAds
+
+      - name: Create release asset
+        if: github.event_name == 'release'
+        run: |
+          zip -r AutomaticAds-${{ github.event.release.tag_name }}.zip ./AutomaticAds
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./AutomaticAds-${{ github.event.release.tag_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

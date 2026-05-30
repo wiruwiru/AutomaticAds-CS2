@@ -9,7 +9,7 @@ public static class Extensions
     public static bool IsValidPlayer(this CCSPlayerController? player)
     {
         return player != null && player.IsValid && !player.IsBot && !player.IsHLTV &&
-               player.Connected == PlayerConnectedState.PlayerConnected;
+               player.Connected == PlayerConnectedState.Connected;
     }
 
     public static List<CCSPlayerController> GetValidPlayers(this IEnumerable<CCSPlayerController> players)
