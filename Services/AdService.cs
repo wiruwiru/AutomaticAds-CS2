@@ -2,6 +2,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Timers;
+using Microsoft.Extensions.Logging;
 
 using AutomaticAds.Config;
 using AutomaticAds.Config.Models;
@@ -108,17 +109,19 @@ public class AdService
     private readonly IIPQueryService _ipQueryService;
     private readonly AdScheduler _adScheduler;
     private readonly Dictionary<AdConfig, DateTime> _lastAdTimes = new();
+    private readonly ILogger _logger;
     private string _currentMap = string.Empty;
     private CCSGameRules? _gameRules;
 
     public AdService(BaseConfigs config, MessageFormatter messageFormatter, TimerManager timerManager,
-                    PlayerManager playerManager, IIPQueryService ipQueryService)
+                    PlayerManager playerManager, IIPQueryService ipQueryService, ILogger logger)
     {
         _config = config;
         _messageFormatter = messageFormatter;
         _playerManager = playerManager;
         _ipQueryService = ipQueryService;
         _adScheduler = new AdScheduler(timerManager);
+        _logger = logger;
 
         InitializeAdTimes();
         InitializeIntervals();
@@ -130,6 +133,8 @@ public class AdService
 
     public void StartAdvertising()
     {
+        _logger.LogDebug("StartAdvertising: SendAdsInOrder={SendAdsInOrder}, total ads={AdCount}", _config.SendAdsInOrder, _config.Ads.Count);
+
         if (_config.SendAdsInOrder)
         {
             StartOrderedAdvertising();
@@ -147,6 +152,7 @@ public class AdService
         foreach (var adType in adTypes)
         {
             var (orderedAds, unorderedAds) = GetOrderedAndUnorderedAds(adType);
+            _logger.LogDebug("StartOrderedAdvertising: {AdType} - ordered={OrderedCount}, unordered={UnorderedCount}", adType, orderedAds.Count, unorderedAds.Count);
 
             if (orderedAds.Any())
             {
@@ -257,10 +263,11 @@ public class AdService
             }
 
             _lastAdTimes[ad] = DateTime.Now;
+            _logger.LogDebug("SendAdToPlayers: Sent ad to {PlayersReached}/{TargetPlayers} players", playersReached, targetPlayers.Count);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error sending ad '{GetAdPreview(ad)}': {ex.Message}");
+            _logger.LogError(ex, "Error sending ad '{AdPreview}'", GetAdPreview(ad));
         }
     }
 
@@ -299,7 +306,7 @@ public class AdService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error sending on-dead ads to player {deadPlayer?.PlayerName ?? "Unknown"}: {ex.Message}");
+            _logger.LogError(ex, "Error sending on-dead ads to player {PlayerName}", deadPlayer?.PlayerName ?? "Unknown");
         }
     }
 
@@ -331,7 +338,7 @@ public class AdService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error checking if ad '{GetAdPreview(ad)}' should be sent to player {player.PlayerName ?? "Unknown"}: {ex.Message}");
+            _logger.LogError(ex, "Error checking if ad '{AdPreview}' should be sent to player {PlayerName}", GetAdPreview(ad), player.PlayerName ?? "Unknown");
             return false;
         }
     }
@@ -405,7 +412,7 @@ public class AdService
                 return;
             }
 
-            Server.NextFrame(async () =>
+            Server.NextFrame(() =>
             {
                 try
                 {
@@ -418,7 +425,7 @@ public class AdService
 
                         if (_playerManager.NeedsCountryUpdate(player.SteamID))
                         {
-                            playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+                            playerInfo = _playerManager.GetOrCreatePlayerInfo(player, _ipQueryService);
                         }
                         else
                         {
@@ -462,13 +469,13 @@ public class AdService
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[AutomaticAds] Error in SendAdToPlayer NextFrame: {ex.Message}");
+                    _logger.LogError(ex, "Error in SendAdToPlayer NextFrame");
                 }
             });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error sending ad to player {player.PlayerName ?? "Unknown"}: {ex.Message}");
+            _logger.LogError(ex, "Error sending ad to player {PlayerName}", player.PlayerName ?? "Unknown");
         }
     }
 }

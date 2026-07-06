@@ -3,6 +3,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
+using Microsoft.Extensions.Logging;
 
 using AutomaticAds.Config;
 using AutomaticAds.Config.Models;
@@ -44,6 +45,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     public override void Load(bool hotReload)
     {
+        Logger.LogDebug("Loading AutomaticAds v{Version}, hotReload={HotReload}", ModuleVersion, hotReload);
         InitializeServices();
         RegisterEventHandlers();
         RegisterCommands();
@@ -59,26 +61,31 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         {
             OnMapStart(Server.MapName);
         }
+
+        Logger.LogDebug("AutomaticAds loaded successfully");
     }
 
     public void OnConfigParsed(BaseConfigs config)
     {
         ConfigValidator.ValidateConfig(config);
         Config = config;
+        Logger.LogDebug("Configuration parsed and validated");
     }
 
     private void InitializeServices()
     {
+        Logger.LogDebug("Initializing services...");
         _messageFormatter = new MessageFormatter(Config);
         _timerManager = new TimerManager(this);
         _playerManager = new PlayerManager(this);
-        _ipQueryService = new IPQueryService();
+        _ipQueryService = new IPQueryService(ModuleDirectory, Logger);
         _screenTextService = new ScreenTextService(_timerManager, Config.ScreenDisplayTime);
         _playerManager.SetScreenTextService(_screenTextService);
 
-        _adService = new AdService(Config, _messageFormatter, _timerManager, _playerManager, _ipQueryService);
+        _adService = new AdService(Config, _messageFormatter, _timerManager, _playerManager, _ipQueryService, Logger);
         _welcomeService = new WelcomeService(Config, _messageFormatter, _timerManager, _playerManager);
-        _joinLeaveService = new JoinLeaveService(Config, _messageFormatter, _playerManager, _ipQueryService, _timerManager);
+        _joinLeaveService = new JoinLeaveService(Config, _messageFormatter, _playerManager, _ipQueryService, _timerManager, Logger);
+        Logger.LogDebug("Services initialized");
     }
 
     private void RegisterEventHandlers()
@@ -158,7 +165,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         if (!player.IsValidPlayer())
             return;
 
-        Server.NextFrame(async () =>
+        Logger.LogDebug("HandleTriggerCommand: player={PlayerName}, commands={Commands}", player?.PlayerName, string.Join(",", ad.TriggerAd ?? []));
+
+        Server.NextFrame(() =>
         {
             try
             {
@@ -171,7 +180,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
                     if (_playerManager!.NeedsCountryUpdate(player!.SteamID))
                     {
-                        playerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player!, _ipQueryService);
+                        playerInfo = _playerManager.GetOrCreatePlayerInfo(player!, _ipQueryService);
                     }
                     else
                     {
@@ -213,7 +222,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[AutomaticAds] Error in HandleTriggerCommand: {ex.Message}");
+                Logger.LogError(ex, "Error in HandleTriggerCommand");
             }
         });
     }
@@ -232,6 +241,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     private void OnMapStart(string mapName)
     {
+        Logger.LogDebug("OnMapStart: {MapName}", mapName);
         _adService?.StartAdvertising();
     }
 
@@ -315,6 +325,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             return HookResult.Continue;
 
         var player = @event.Userid;
+        Logger.LogDebug("OnPlayerFullConnect: {PlayerName} (SteamID: {SteamID})", player.PlayerName, player.SteamID);
 
         if (Config.EnableJoinLeaveMessages || Config.UseMultiLang)
         {
@@ -328,11 +339,12 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         return HookResult.Continue;
     }
 
-    private async void HandlePlayerConnectWithCountryInfo(CCSPlayerController player)
+    private void HandlePlayerConnectWithCountryInfo(CCSPlayerController player)
     {
         try
         {
-            var playerInfo = await _playerManager!.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+            var playerInfo = _playerManager!.GetOrCreatePlayerInfo(player, _ipQueryService);
+            Logger.LogDebug("HandlePlayerConnectWithCountryInfo: {PlayerName}, country={CountryCode}", player.PlayerName, playerInfo.CountryCode);
             Server.NextFrame(() =>
             {
                 try
@@ -349,13 +361,13 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectWithCountryInfo NextFrame: {ex.Message}");
+                    Logger.LogError(ex, "Error in HandlePlayerConnectWithCountryInfo NextFrame");
                 }
             });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectWithCountryInfo: {ex.Message}");
+            Logger.LogError(ex, "Error in HandlePlayerConnectWithCountryInfo");
             HandlePlayerConnectBasic(player);
         }
     }
@@ -377,13 +389,13 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectBasic NextFrame: {ex.Message}");
+                    Logger.LogError(ex, "Error in HandlePlayerConnectBasic NextFrame");
                 }
             });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerConnectBasic: {ex.Message}");
+            Logger.LogError(ex, "Error in HandlePlayerConnectBasic");
         }
     }
 
@@ -403,6 +415,8 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         var player = @event.Userid;
         if (!player.IsValidPlayer())
             return HookResult.Continue;
+
+        Logger.LogDebug("OnPlayerDisconnect: {PlayerName}", player?.PlayerName);
 
         StopCenterHtmlMessage(player!);
 
@@ -458,6 +472,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     public override void Unload(bool hotReload)
     {
+        Logger.LogDebug("Unloading AutomaticAds, hotReload={HotReload}", hotReload);
         _timerManager?.KillAllTimers();
         _screenTextService?.ClearAllPlayerTexts();
         RemoveListener<Listeners.OnTick>(OnTick);

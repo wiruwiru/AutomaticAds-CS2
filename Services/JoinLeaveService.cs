@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using Microsoft.Extensions.Logging;
 
 using AutomaticAds.Config;
 using AutomaticAds.Managers;
@@ -17,17 +18,19 @@ public class JoinLeaveService
     private readonly HashSet<ulong> _processedJoins = new();
     private readonly HashSet<ulong> _processedLeaves = new();
     private readonly TimerManager _timerManager;
+    private readonly ILogger _logger;
 
-    public JoinLeaveService(BaseConfigs config, MessageFormatter messageFormatter, PlayerManager playerManager, IIPQueryService ipQueryService, TimerManager timerManager)
+    public JoinLeaveService(BaseConfigs config, MessageFormatter messageFormatter, PlayerManager playerManager, IIPQueryService ipQueryService, TimerManager timerManager, ILogger logger)
     {
         _config = config;
         _messageFormatter = messageFormatter;
         _playerManager = playerManager;
         _ipQueryService = ipQueryService;
         _timerManager = timerManager;
+        _logger = logger;
     }
 
-    public async void HandlePlayerJoin(CCSPlayerController player)
+    public void HandlePlayerJoin(CCSPlayerController player)
     {
         if (!_config.EnableJoinLeaveMessages)
             return;
@@ -44,6 +47,7 @@ public class JoinLeaveService
             steamId = player.SteamID;
             playerName = player.PlayerName;
             playerIp = player.GetPlayerIpAddress();
+            _logger.LogDebug("HandlePlayerJoin: steamId={SteamId}, name={PlayerName}, ip={PlayerIp}", steamId, playerName, playerIp);
         }
         catch
         {
@@ -51,7 +55,10 @@ public class JoinLeaveService
         }
 
         if (_processedJoins.Contains(steamId))
+        {
+            _logger.LogDebug("HandlePlayerJoin: Already processed join for {SteamId}", steamId);
             return;
+        }
 
         _processedJoins.Add(steamId);
 
@@ -69,7 +76,7 @@ public class JoinLeaveService
 
             if (_config.UseMultiLang)
             {
-                joiningPlayerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+                joiningPlayerInfo = _playerManager.GetOrCreatePlayerInfo(player, _ipQueryService);
             }
             else
             {
@@ -77,6 +84,8 @@ public class JoinLeaveService
                 joiningPlayerInfo.CountryCode = Utils.Constants.ErrorMessages.Unknown;
                 joiningPlayerInfo.CountryName = Utils.Constants.ErrorMessages.Unknown;
             }
+
+            _logger.LogDebug("HandlePlayerJoin: Player {PlayerName} country={CountryCode}", playerName, joiningPlayerInfo.CountryCode);
 
             Server.NextFrame(() =>
             {
@@ -129,14 +138,14 @@ public class JoinLeaveService
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"[AutomaticAds] Error sending join message to player {targetPlayer.PlayerName ?? "Unknown"}: {ex.Message}");
+                                _logger.LogError(ex, "Error sending join message to player {PlayerName}", targetPlayer.PlayerName ?? "Unknown");
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[AutomaticAds] Error in HandlePlayerJoin NextFrame: {ex.Message}");
+                    _logger.LogError(ex, "Error in HandlePlayerJoin NextFrame");
                 }
                 finally
                 {
@@ -146,12 +155,12 @@ public class JoinLeaveService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerJoin: Player '{playerName ?? "Unknown"}' - {ex.Message}");
+            _logger.LogError(ex, "Error in HandlePlayerJoin: Player '{PlayerName}'", playerName ?? "Unknown");
             _processedJoins.Remove(steamId);
         }
     }
 
-    public async void HandlePlayerLeave(CCSPlayerController player)
+    public void HandlePlayerLeave(CCSPlayerController player)
     {
         if (!_config.EnableJoinLeaveMessages)
             return;
@@ -168,6 +177,7 @@ public class JoinLeaveService
             steamId = player.SteamID;
             playerName = player.PlayerName;
             playerIp = player.GetPlayerIpAddress();
+            _logger.LogDebug("HandlePlayerLeave: steamId={SteamId}, name={PlayerName}", steamId, playerName);
         }
         catch
         {
@@ -175,7 +185,10 @@ public class JoinLeaveService
         }
 
         if (_processedLeaves.Contains(steamId))
+        {
+            _logger.LogDebug("HandlePlayerLeave: Already processed leave for {SteamId}", steamId);
             return;
+        }
 
         _processedLeaves.Add(steamId);
 
@@ -193,7 +206,7 @@ public class JoinLeaveService
 
             if (_config.UseMultiLang)
             {
-                leavingPlayerInfo = await _playerManager.GetOrCreatePlayerInfoAsync(player, _ipQueryService);
+                leavingPlayerInfo = _playerManager.GetOrCreatePlayerInfo(player, _ipQueryService);
             }
             else
             {
@@ -240,13 +253,13 @@ public class JoinLeaveService
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[AutomaticAds] Error sending leave message to player {targetPlayer.PlayerName ?? "Unknown"}: {ex.Message}");
+                            _logger.LogError(ex, "Error sending leave message to player {PlayerName}", targetPlayer.PlayerName ?? "Unknown");
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[AutomaticAds] Error in HandlePlayerLeave NextFrame: {ex.Message}");
+                    _logger.LogError(ex, "Error in HandlePlayerLeave NextFrame");
                 }
                 finally
                 {
@@ -256,7 +269,7 @@ public class JoinLeaveService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error in HandlePlayerLeave: Player '{playerName ?? "Unknown"}' - {ex.Message}");
+            _logger.LogError(ex, "Error in HandlePlayerLeave: Player '{PlayerName}'", playerName ?? "Unknown");
             _processedLeaves.Remove(steamId);
         }
     }
@@ -273,7 +286,7 @@ public class JoinLeaveService
             }
             catch
             {
-                Console.WriteLine("[AutomaticAds] Error processing player disconnect: Player object is invalid.");
+                _logger.LogError("Error processing player disconnect: Player object is invalid.");
             }
         }
     }

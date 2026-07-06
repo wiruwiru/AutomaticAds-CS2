@@ -1,6 +1,7 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 using AutomaticAds.Models;
 using AutomaticAds.Config;
@@ -37,25 +38,30 @@ public class PlayerManager
                _plugin?.Config?.UseMultiLang == true;
     }
 
-    public async Task<PlayerInfo> GetOrCreatePlayerInfoAsync(CCSPlayerController player, Services.IIPQueryService? ipQueryService = null)
+    public PlayerInfo GetOrCreatePlayerInfo(CCSPlayerController player, Services.IIPQueryService? ipQueryService = null)
     {
         try
         {
             ulong steamId = player.SteamID;
+            _plugin?.Logger.LogDebug("GetOrCreatePlayerInfo: steamId={SteamId}, player={PlayerName}", steamId, player.PlayerName);
 
             var cachedInfo = GetCachedPlayerInfo(steamId);
             if (cachedInfo != null && IsValidCachedInfo(cachedInfo))
+            {
+                _plugin?.Logger.LogDebug("GetOrCreatePlayerInfo: Using cached info for {SteamId}", steamId);
                 return cachedInfo;
+            }
 
             var playerInfo = CreatePlayerInfo(player);
-            await EnrichWithCountryInfoIfNeeded(playerInfo, ipQueryService);
+            EnrichWithCountryInfoIfNeeded(playerInfo, ipQueryService);
             UpdateCache(steamId, playerInfo);
 
+            _plugin?.Logger.LogDebug("GetOrCreatePlayerInfo: Created new info for {SteamId}, country={CountryCode}", steamId, playerInfo.CountryCode);
             return playerInfo;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error getting/creating player info: {ex.Message}");
+            _plugin?.Logger.LogError(ex, "Error getting/creating player info");
             return CreatePlayerInfo(player);
         }
     }
@@ -67,16 +73,20 @@ public class PlayerManager
             ulong steamId = player.SteamID;
 
             if (_playerInfoCache.TryGetValue(steamId, out var cachedInfo))
+            {
+                _plugin?.Logger.LogDebug("GetBasicPlayerInfo: Using cached info for {SteamId}", steamId);
                 return cachedInfo;
+            }
 
             var basicInfo = CreateBasicPlayerInfo(player);
             AddToCache(steamId, basicInfo);
 
+            _plugin?.Logger.LogDebug("GetBasicPlayerInfo: Created basic info for {SteamId}", steamId);
             return basicInfo;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error getting basic player info: {ex.Message}");
+            _plugin?.Logger.LogError(ex, "Error getting basic player info");
             return CreatePlayerInfo(player);
         }
     }
@@ -95,11 +105,13 @@ public class PlayerManager
                cachedInfo.CountryCode != Utils.Constants.ErrorMessages.Unknown;
     }
 
-    private async Task EnrichWithCountryInfoIfNeeded(PlayerInfo playerInfo, Services.IIPQueryService? ipQueryService)
+    private void EnrichWithCountryInfoIfNeeded(PlayerInfo playerInfo, Services.IIPQueryService? ipQueryService)
     {
         var shouldQuery = ShouldQueryCountryInfo() &&
                          ipQueryService != null &&
                          !string.IsNullOrEmpty(playerInfo.IpAddress);
+
+        _plugin?.Logger.LogDebug("EnrichWithCountryInfoIfNeeded: shouldQuery={ShouldQuery}, ip={Ip}", shouldQuery, playerInfo.IpAddress);
 
         if (!shouldQuery)
         {
@@ -107,19 +119,12 @@ public class PlayerManager
             return;
         }
 
-        if (ipQueryService != null)
-        {
-            await SetCountryInfoFromApi(playerInfo, ipQueryService);
-        }
-        else
-        {
-            SetDefaultCountryInfo(playerInfo);
-        }
+        SetCountryInfoFromReader(playerInfo, ipQueryService!);
     }
 
-    private async Task SetCountryInfoFromApi(PlayerInfo playerInfo, Services.IIPQueryService ipQueryService)
+    private void SetCountryInfoFromReader(PlayerInfo playerInfo, Services.IIPQueryService ipQueryService)
     {
-        var countryCode = await ipQueryService.GetCountryCodeAsync(playerInfo.IpAddress);
+        var countryCode = ipQueryService.GetCountryCode(playerInfo.IpAddress);
         var isValidCountryCode = countryCode != Utils.Constants.ErrorMessages.CountryCodeError;
 
         playerInfo.CountryCode = isValidCountryCode ? countryCode : Utils.Constants.ErrorMessages.Unknown;
@@ -169,10 +174,11 @@ public class PlayerManager
             _playerInfoCache.TryRemove(steamId, out _);
             _cacheTimestamps.TryRemove(steamId, out _);
             _screenTextService?.OnPlayerDisconnect(player);
+            _plugin?.Logger.LogDebug("ClearPlayerCache: Cleared cache for {SteamId}", steamId);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AutomaticAds] Error clearing player cache: {ex.Message}");
+            _plugin?.Logger.LogError(ex, "Error clearing player cache");
         }
     }
 
@@ -199,7 +205,7 @@ public class PlayerManager
 
         if (expiredKeys.Count > 0)
         {
-            Console.WriteLine($"[AutomaticAds] Cleaned up {expiredKeys.Count} expired cache entries");
+            _plugin?.Logger.LogDebug("Cleaned up {Count} expired cache entries", expiredKeys.Count);
         }
     }
 
@@ -226,7 +232,7 @@ public class PlayerManager
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[AutomaticAds] Error playing sound to player: {ex.Message}");
+                    _plugin?.Logger.LogError(ex, "Error playing sound to player");
                 }
             });
         }
@@ -277,7 +283,7 @@ public class PlayerManager
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[AutomaticAds] Error sending message to player: {ex.Message}");
+                _plugin?.Logger.LogError(ex, "Error sending message to player");
             }
         });
     }

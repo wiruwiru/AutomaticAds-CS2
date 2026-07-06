@@ -123,4 +123,7 @@ public class BaseConfigs : BasePluginConfig
             DisableSound = true
         }
     };
+
+    [JsonPropertyName("ConfigVersion")]
+    public override int Version { get; set; } = 1;
 }
