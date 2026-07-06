@@ -98,3 +98,8 @@ You can use the following placeholders in your announcements:
 ## Support
 
 For issues, questions, or feature requests, please visit our [GitHub Issues](https://github.com/wiruwiru/AutomaticAds-CS2/issues) page.
+
+---
+
+## Acknowledgments
+This product uses GeoLite2 data created by MaxMind, available from [MaxMind](https://www.maxmind.com).
