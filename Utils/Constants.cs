@@ -25,9 +25,4 @@ public static class Constants
         public const string GenericError = "Error";
         public const string Unknown = "Unknown";
     }
-
-    public static class ApiUrls
-    {
-        public const string CountryApiBase = "https://api.country.is/";
-    }
 }
