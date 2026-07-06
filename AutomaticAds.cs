@@ -104,7 +104,7 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
             });
         });
 
-        RegisterListener<Listeners.OnMapEnd>(() => Unload(true));
+        RegisterListener<Listeners.OnMapEnd>(OnMapEnd);
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
         RegisterListener<Listeners.OnTick>(OnTick);
 
@@ -243,6 +243,16 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
     {
         Logger.LogDebug("OnMapStart: {MapName}", mapName);
         _adService?.StartAdvertising();
+    }
+
+    private void OnMapEnd()
+    {
+        Logger.LogDebug("OnMapEnd: clearing state");
+        _centerHtmlStartTimes.Clear();
+        _activeCenterHtmlMessages.Clear();
+        _lastCenterHtmlUpdateTimes.Clear();
+        _centerHtmlIsOnDead.Clear();
+        _playerManager?.ClearAllCache();
     }
 
     private void OnTick()
@@ -475,6 +485,13 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
         Logger.LogDebug("Unloading AutomaticAds, hotReload={HotReload}", hotReload);
         _timerManager?.KillAllTimers();
         _screenTextService?.ClearAllPlayerTexts();
+        _playerManager?.ClearAllCache();
+
+        _centerHtmlStartTimes.Clear();
+        _activeCenterHtmlMessages.Clear();
+        _lastCenterHtmlUpdateTimes.Clear();
+        _centerHtmlIsOnDead.Clear();
+
         RemoveListener<Listeners.OnTick>(OnTick);
     }
 }
