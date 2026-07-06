@@ -257,6 +257,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
     private void OnTick()
     {
+        if (_activeCenterHtmlMessages.Count == 0)
+            return;
+
         var currentTime = DateTime.Now;
         var playersToRemove = new List<int>();
 
@@ -269,9 +272,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
 
             int playerId = player.UserId.Value;
 
-            if (_activeCenterHtmlMessages.ContainsKey(playerId) && _centerHtmlStartTimes.ContainsKey(playerId))
+            if (_activeCenterHtmlMessages.TryGetValue(playerId, out var message) &&
+                _centerHtmlStartTimes.TryGetValue(playerId, out var startTime))
             {
-                var startTime = _centerHtmlStartTimes[playerId];
                 var elapsedTime = (currentTime - startTime).TotalSeconds;
 
                 if (elapsedTime >= Config.centerHtmlDisplayTime)
@@ -280,10 +283,9 @@ public class AutomaticAdsBase : BasePlugin, IPluginConfig<BaseConfigs>
                     continue;
                 }
 
-                if (!_lastCenterHtmlUpdateTimes.ContainsKey(playerId) ||
-                    (currentTime - _lastCenterHtmlUpdateTimes[playerId]).TotalMilliseconds >= 40)
+                if (!_lastCenterHtmlUpdateTimes.TryGetValue(playerId, out var lastUpdate) ||
+                    (currentTime - lastUpdate).TotalMilliseconds >= 40)
                 {
-                    string message = _activeCenterHtmlMessages[playerId];
                     player.PrintToCenterHtml(message);
                     _lastCenterHtmlUpdateTimes[playerId] = currentTime;
                 }
